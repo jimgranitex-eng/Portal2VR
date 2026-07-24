@@ -258,7 +258,7 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	
 	// Right eye CViewSetup
 	tempAngle = QAngle(setup.angles.x, setup.angles.y, setup.angles.z);
-	rightEyeView.origin = m_VR->TraceEye((uint32_t*)localPlayer, position, m_VR->GetViewOriginRight(position), tempAngle);
+	rightEyeView.origin = m_VR->TraceEye(reinterpret_cast<uint32_t*>(localPlayer), position, m_VR->GetViewOriginRight(position), tempAngle);
 	rightEyeView.angles.y = tempAngle.y;
 
 	rndrContext->SetRenderTarget(m_VR->m_RightEyeTexture);
