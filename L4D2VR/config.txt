@@ -1,3 +1,8 @@
+# Portal 2 VR Mod v5.3.0 (2026-07-24)
+# Auto-detect VR — no launch options needed
+#
+# Edit this file to change settings. Changes apply live while the game is running.
+
 TurnSpeed=0.15
 SnapTurning=false
 SnapTurnAngle=45.0

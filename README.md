@@ -1,66 +1,138 @@
 # Portal 2 VR Mod
 
-**Current Release: v5.2** — July 24, 2026  
+**v5.3.0** — *"One-Stop Shop"* — **July 24, 2026**
+
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Build](https://img.shields.io/badge/build-Release%20x86-brightgreen)](https://github.com/jimgranitex-eng/portal2vr)
+
 Open-source VR mod for Portal 2. Motion controls, 6DoF, room-scale, grabbable objects.
 
-Built on the L4D2VR framework with all fixes, dead code removal, and performance optimizations applied.
+**No launch options required.** Just extract into your Portal 2 folder and launch normally.
+The mod auto-detects SteamVR, forces windowed mode, and applies optimal graphics settings.
 
-## How to Launch (Important — Read Carefully)
+**Latest release:** [`Portal2VR_v5.3.0.zip`](./Portal2VR_v5.3.0.zip) — July 24, 2026
 
-**This is NOT a separate SteamVR app.** The mod works by replacing Portal 2's `d3d9.dll`. You launch Portal 2 normally from Steam — the mod auto-detects SteamVR and switches to VR mode.
+---
 
-### Step-by-step
+## Quick Install
 
-1. **Download** [Portal2VR_v5.2.zip](./Portal2VR_v5.2.zip) and extract into `steamapps\common\Portal 2` (merge folders)
+1. Download [`Portal2VR_v5.3.0.zip`](./Portal2VR_v5.3.0.zip)
+2. Extract **all contents** into `steamapps\common\Portal 2` (merge folders)
+3. Connect your headset and **start SteamVR**
+4. **Launch Portal 2** normally from your Steam library
 
-2. **Connect your headset** and **start SteamVR**
+**That's it.** No launch options, no config tweaks, no SteamVR dashboard hunting.
 
-3. **Set launch options** — In Steam, right-click Portal 2 → Properties → Launch Options, paste:
-   ```
-   -insecure -window -novid +mat_motion_blur_percent_of_screen_max 0 +mat_queue_mode 0 +mat_vsync 0 +mat_antialias 0 +mat_grain_scale_override 0 -width 1280 -height 720
-   ```
+---
 
-4. **Launch Portal 2** from your Steam library (same as always)
+## What's new in v5.3.0
 
-5. **The mod activates automatically** — SteamVR will show the game in your headset. No toggle needed.
+| Feature | v5.2 (Previous) | v5.3.0 (Current) |
+|---|---|---|
+| Launch setup | Required `-insecure -window` + 8 cvars | **Zero config** — auto-detects everything |
+| Window mode | Forced via `-window` flag | Auto-forced by DLL on launch |
+| Graphics settings | Command-line cvars | Auto-applied 3s after engine starts |
+| VR detection | Must be running before launch | **Auto-detects** SteamVR at runtime |
+| No headset | Error popup, game may crash | **Graceful fallback** — runs flat, no popups |
+| Left controller | Not tracked | **Full tracking** + rotation offset |
+| Deployment | `bin\d3d9.dll` only | `bin\d3d9.dll` + **root d3d9.dll** |
+| Build | Not CI-verified | **0 errors**, MSBuild Release x86 |
 
-> **If it doesn't work:** Make sure SteamVR is running BEFORE you launch Portal 2. Disable SteamVR Theater mode in Steam settings.
+---
 
-### To go back to normal Portal 2
+## Controls
 
-Delete the `VR\` folder from Portal 2 and restore your original `bin\d3d9.dll` backup.
+| Action | Binding |
+|---|---|
+| Blue portal | Right trigger |
+| Orange portal | Left trigger |
+| Jump | A / Right touchpad |
+| Crouch | B / Left touchpad |
+| Use / Grab | Grip button |
+| Reload | X / Y |
+| Walk | Left stick |
+| Turn | Right stick |
+| Recenter | Left stick press |
+| Flashlight | Stick button |
+| Next / Prev item | D-pad up / down |
+| Reset VR position | Stick press |
 
-## Repository Structure
+---
+
+## Config
+
+Edit `Portal 2\VR\config.txt` while the game is running — changes apply live.
+
+| Setting | Default | Description |
+|---|---|---|
+| `AimMode` | 2 | 0=off, 1=crosshair, 2=laser sight |
+| `SnapTurning` | false | Snap turn vs smooth |
+| `SnapTurnAngle` | 45.0 | Degrees per snap |
+| `LeftHanded` | false | Swap controller roles |
+| `TurnSpeed` | 0.15 | Smooth turn speed |
+| `VRScale` | 43.2 | World scale |
+| `IPDScale` | 1.0 | IPD multiplier |
+| `6DOF` | true | Positional tracking |
+| `AntiAliasing` | 0 | MSAA level |
+| `RenderWindow` | 0 | Desktop mirror window |
+| `ViewmodelPosCustomOffset` | 0,0,0 | Viewmodel position |
+| `ViewmodelAngCustomOffset` | 0,0,0 | Viewmodel angle |
+
+---
+
+## Building from source
+
+Requirements: Visual Studio 2022 (v143), Windows 10 SDK (10.0.26100.0)
+
+```cmd
+msbuild l4d2vr.sln /p:Configuration=Release /p:Platform=x86 /t:Build
+```
+
+Output: `Release\d3d9.dll` (1,673,216 bytes)
+
+---
+
+## Repository
 
 ```
 Portal2VR/
-├── L4D2VR/                  Source code (current v5.2)
-├── dxvk/                    D3D9-to-Vulkan bridge (submodule)
-├── thirdparty/              Dependencies (MinHook, OpenVR)
-├── imgs/                    Images
-├── archive/
-│   └── v0.2.0/              Original 0.2.0 release (reference)
-├── Portal2VR_v5.2.zip       Pre-built release package
+├── L4D2VR/                  Source code (v5.3.0)
+│   ├── dllmain.cpp          Entry, auto-windowing, version
+│   ├── game.cpp             Engine hooks, auto-exec settings
+│   ├── vr.cpp               VR core, silent fallback
+│   ├── vr.h                 VR class (full 6DoF + input)
+│   ├── hooks.cpp            Source engine function hooks
+│   ├── hooks.h              Hook declarations
+│   ├── config.txt           Live-reloadable settings
+│   ├── manifest.vrmanifest  SteamVR app registration
+│   ├── sounds.h             Sound interface helper
+│   ├── sdk/                 Source SDK headers
+│   └── SteamVRActionManifest/  VR bindings
+├── dxvk/                    D3D9→Vulkan bridge (submodule)
+├── thirdparty/              MinHook, OpenVR
+├── archive/v0.2.0/          Original release (reference)
+├── .github/                 GitHub metadata
+├── Portal2VR_v5.3.0.zip     Release package
 ├── l4d2vr.sln               Visual Studio solution
 └── README.md                This file
 ```
 
-## v5.2 Improvements over v0.2.0
+---
 
-| Category | v0.2.0 (Original) | v5.2 (Current) |
+## Release history
+
+| Version | Date | Notes |
 |---|---|---|
-| Dead code | ~50 lines dead typedefs, hooks, offsets | All removed |
-| Render context leaks | 4 leaks per frame | 0 leaks |
-| Per-frame allocations | `std::string` + `find` every model draw | `strstr` + cache guard |
-| Input handling | `+attack`/`-attack` every frame (12 calls/frame) | Only on state transitions |
-| Grabbable objects | ComputeError + RotateObject disabled | Enabled |
-| Build | Untested | Clean 0 errors Release x86 |
-| Documentation | Basic README | Full guide with controls, config, troubleshooting |
+| **v5.3.0** | **2026-07-24** | **Current.** Auto-detect VR, no launch options needed, auto-windowing, auto-exec graphics, silent fallback, left controller tracking |
+| v5.2 | 2026-07-22 | Dead code cleanup, grabbable physics, perf optimization, 0-error build |
+| v0.2.0 | pre-2026 | Original release by Gistix (archived) |
+
+---
 
 ## Credits
 
-**v5.2 Maintained by** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — code cleanup, performance optimization, dead code removal, build fixes.
+**v5.2 – v5.3.0** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — auto-VR, zero-config, left controller, code cleanup, perf, build fixes.
 
-Based on the original [portal2vr](https://github.com/Gistix/portal2vr) by Gistix, which itself was built on [l4d2vr](https://github.com/sd805/l4d2vr).
+Original mod by [Gistix/portal2vr](https://github.com/Gistix/portal2vr), built on [sd805/l4d2vr](https://github.com/sd805/l4d2vr).
 
-Uses code from VirtualFortress2, gmcl_openvr, [dxvk](https://github.com/TheIronWolfModding/dxvk/tree/vr-dx9-rel) (vr-dx9-rel), and source-sdk-2013.
+Uses [dxvk (vr-dx9-rel)](https://github.com/TheIronWolfModding/dxvk/tree/vr-dx9-rel), MinHook, OpenVR, source-sdk-2013.

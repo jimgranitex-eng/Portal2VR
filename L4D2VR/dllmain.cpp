@@ -6,6 +6,40 @@
 #include "vr.h"
 #include "sdk.h"
 
+#define VER_PRODUCT "Portal 2 VR Mod"
+#define VER_VERSION "5.3.0"
+#define VER_DATE    "2026-07-24"
+
+static bool g_WindowPatched = false;
+
+static void ForceWindowedMode()
+{
+    HWND hWnd = FindWindowA("Valve001", NULL);
+    if (!hWnd)
+        hWnd = FindWindowA(NULL, "Portal 2");
+    if (!hWnd)
+        return;
+
+    LONG style = GetWindowLongPtrA(hWnd, GWL_STYLE);
+    style &= ~(WS_POPUP | WS_CAPTION);
+    style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    SetWindowLongPtrA(hWnd, GWL_STYLE, style);
+
+    SetWindowPos(hWnd, NULL, 100, 100, 1280, 720, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    g_WindowPatched = true;
+}
+
+static DWORD WINAPI AutoWindowThread(LPVOID)
+{
+    for (int tries = 0; tries < 60; ++tries)
+    {
+        ForceWindowedMode();
+        if (g_WindowPatched) break;
+        Sleep(500);
+    }
+    return 0;
+}
+
 DWORD WINAPI InitL4D2VR(HMODULE hModule)
 {
 // Allocate console for debug output in debug builds
@@ -15,22 +49,13 @@ DWORD WINAPI InitL4D2VR(HMODULE hModule)
     freopen_s(&fp, "CONOUT$", "w", stdout);
 #endif
 
-    // Make sure -insecure is used
-    LPWSTR *szArglist;
-    int nArgs;
-    szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-    bool insecureEnabled = false;
-    for (int i = 0; i < nArgs; ++i)
-    {
-        if (wcscmp(szArglist[i], L"-insecure") == 0)
-            insecureEnabled = true;
-    }
-    LocalFree(szArglist);
-
-    if (!insecureEnabled)
-        ExitProcess(0);
+    std::cout << VER_PRODUCT " v" VER_VERSION " (" VER_DATE ")" << std::endl;
+    std::cout << "Auto-detecting SteamVR... no launch options required." << std::endl;
 
     g_Game = new Game();
+
+    // Auto-force windowed mode so no launch options are needed
+    CreateThread(NULL, 0, AutoWindowThread, NULL, 0, NULL);
 
     return 0;
 }

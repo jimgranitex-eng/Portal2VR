@@ -26,8 +26,8 @@ VR::VR(Game *game)
 
     if (error != vr::VRInitError_None) 
     {
-        snprintf(errorString, MAX_STR_LEN, "VR_Init failed: %s", vr::VR_GetVRInitErrorAsEnglishDescription(error));
-        Game::errorMsg(errorString);
+        m_IsInitialized = false;
+        m_IsVREnabled = false;
         return;
     }
 
@@ -35,7 +35,8 @@ VR::VR(Game *game)
 
     if (!vr::VRCompositor())
     {
-        Game::errorMsg("Compositor initialization failed.");
+        m_IsInitialized = false;
+        m_IsVREnabled = false;
         return;
     }
 

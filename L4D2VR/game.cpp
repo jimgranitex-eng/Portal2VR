@@ -8,6 +8,30 @@
 #include "offsets.h"
 #include "sigscanner.h"
 
+static const char* g_AutoExecCmds[] = {
+    "mat_motion_blur_percent_of_screen_max 0",
+    "mat_queue_mode 0",
+    "mat_vsync 0",
+    "mat_antialias 0",
+    "mat_grain_scale_override 0",
+    "mat_disable_bloom 1",
+    "fog_enable 0",
+    "r_drawmodelstatsoverlay 0",
+    "r_shadows 0",
+    "budget_show_history 0",
+    "cl_showfps 0",
+    "net_graph 0",
+};
+
+static DWORD WINAPI AutoExecThread(LPVOID param)
+{
+    Game* game = (Game*)param;
+    Sleep(3000);
+    for (int i = 0; i < sizeof(g_AutoExecCmds) / sizeof(g_AutoExecCmds[0]); ++i)
+        game->ClientCmd_Unrestricted(g_AutoExecCmds[i]);
+    return 0;
+}
+
 Game::Game()
 {
     while (!(m_BaseClient = (uintptr_t)GetModuleHandle("client.dll")))
@@ -41,6 +65,9 @@ Game::Game()
     m_Hooks = new Hooks(this);
 
     m_Initialized = true;
+
+    // Auto-apply optimal settings — no launch options needed
+    CreateThread(NULL, 0, AutoExecThread, this, 0, NULL);
 }
 
 void *Game::GetInterface(const char *dllname, const char *interfacename)
