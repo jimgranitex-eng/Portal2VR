@@ -59,4 +59,8 @@ Portal2VR/
 
 ## Credits
 
-Based on [l4d2vr](https://github.com/sd805/l4d2vr). Uses code from VirtualFortress2, gmcl_openvr, dxvk (vr-dx9-rel), source-sdk-2013.
+**v5.2 Maintained by** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — code cleanup, performance optimization, dead code removal, build fixes.
+
+Based on the original [portal2vr](https://github.com/Gistix/portal2vr) by Gistix, which itself was built on [l4d2vr](https://github.com/sd805/l4d2vr).
+
+Uses code from VirtualFortress2, gmcl_openvr, [dxvk](https://github.com/TheIronWolfModding/dxvk/tree/vr-dx9-rel) (vr-dx9-rel), and source-sdk-2013.
