@@ -419,7 +419,9 @@ public:
 	char pad_0000[6124]; //0x0000
 	int entitiesHitThisSwing; //0x17F0
 }; //Size: 0x17F4
+#ifndef _WIN64
 static_assert(sizeof(Server_WeaponCSBase) == 0x17F4);
+#endif
 
 class Server_BaseEntity
 {
@@ -633,7 +635,9 @@ public:
 	virtual ~CPortalGameMovement() = 0;
 	C_BasePlayer* player; //0x0004
 }; //Size: 0x8
+#ifndef _WIN64
 static_assert(sizeof(CPortalGameMovement) == 0x8);
+#endif
 
 class CBaseEntity
 {
@@ -668,4 +672,6 @@ public:
 	char pad_0328[44]; //0x0328
 	char* m_iszDamageFilterName; //0x0354
 }; //Size: 0x0358
+#ifndef _WIN64
 static_assert(sizeof(CBaseEntity) == 0x0358);
+#endif

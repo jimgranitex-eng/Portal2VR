@@ -19,21 +19,25 @@ VR::VR(Game *game)
 {
     m_Game = game;
 
-    char errorString[MAX_STR_LEN];
-
-    vr::HmdError error = vr::VRInitError_None;
-    m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
-
-    if (error != vr::VRInitError_None) 
+    try
     {
-        m_IsInitialized = false;
-        m_IsVREnabled = false;
-        return;
+        vr::HmdError error = vr::VRInitError_None;
+        m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
+        if (error != vr::VRInitError_None)
+        {
+            m_IsInitialized = false;
+            m_IsVREnabled = false;
+            return;
+        }
+
+        if (!vr::VRCompositor())
+        {
+            m_IsInitialized = false;
+            m_IsVREnabled = false;
+            return;
+        }
     }
-
-    vr::EVRInitError peError = vr::VRInitError_None;
-
-    if (!vr::VRCompositor())
+    catch (...)
     {
         m_IsInitialized = false;
         m_IsVREnabled = false;
@@ -44,7 +48,6 @@ VR::VR(Game *game)
     m_System = vr::OpenVRInternal_ModuleContext().VRSystem();
 
     m_System->GetRecommendedRenderTargetSize(&m_RenderWidth, &m_RenderHeight);
-    m_AntiAliasing = 0;
 
     float l_left = 0.0f, l_right = 0.0f, l_top = 0.0f, l_bottom = 0.0f;
     m_System->GetProjectionRaw(vr::EVREye::Eye_Left, &l_left, &l_right, &l_top, &l_bottom);
@@ -53,7 +56,6 @@ VR::VR(Game *game)
     m_System->GetProjectionRaw(vr::EVREye::Eye_Right, &r_left, &r_right, &r_top, &r_bottom);
 
     float tanHalfFov[2];
-
     tanHalfFov[0] = std::max({ -l_left, l_right, -r_left, r_right });
     tanHalfFov[1] = std::max({ -l_top, l_bottom, -r_top, r_bottom });
 
@@ -61,7 +63,6 @@ VR::VR(Game *game)
     m_TextureBounds[0].uMax = 0.5f + 0.5f * l_right / tanHalfFov[0];
     m_TextureBounds[0].vMin = 0.5f - 0.5f * l_bottom / tanHalfFov[1];
     m_TextureBounds[0].vMax = 0.5f - 0.5f * l_top / tanHalfFov[1];
-
     m_TextureBounds[1].uMin = 0.5f + 0.5f * r_left / tanHalfFov[0];
     m_TextureBounds[1].uMax = 0.5f + 0.5f * r_right / tanHalfFov[0];
     m_TextureBounds[1].vMin = 0.5f - 0.5f * r_bottom / tanHalfFov[1];
@@ -81,12 +82,28 @@ VR::VR(Game *game)
 
     g_D3DVR9->GetBackBufferData(&m_VKBackBuffer);
     m_Overlay = vr::VROverlay();
-    m_Overlay->CreateOverlay("MenuOverlayKey", "MenuOverlay", &m_MainMenuHandle);
+
+    // Dashboard overlay — visible in SteamVR environment/dashboard
+    m_Overlay->CreateDashboardOverlay("Portal2VR_Dashboard", "Portal 2 VR",
+        &m_DashboardHandle, &m_MainMenuHandle);
+
+    // Loading screen overlay — shown in the VR void/grid while loading
+    m_Overlay->CreateOverlay("Portal2VR_LoadingScreen", "Portal 2 VR Loading", &m_LoadingScreenHandle);
+    m_Overlay->SetOverlayWidthInMeters(m_LoadingScreenHandle, 3.0f);
+    vr::HmdMatrix34_t identity = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 1.5f,
+        0.0f, 0.0f, 1.0f, -3.0f
+    };
+    m_Overlay->SetOverlayTransformTrackedDeviceRelative(m_LoadingScreenHandle, vr::k_unTrackedDeviceIndex_Hmd, &identity);
+    m_Overlay->ShowOverlay(m_LoadingScreenHandle);
+    m_Overlay->SetOverlayFlag(m_LoadingScreenHandle, vr::VROverlayFlags_NoDashboardTab, true);
+    m_Overlay->SetOverlayFlag(m_LoadingScreenHandle, vr::VROverlayFlags_SortWithNonSceneOverlays, true);
+
     m_Overlay->SetOverlayInputMethod(m_MainMenuHandle, vr::VROverlayInputMethod_Mouse);
     m_Overlay->SetOverlayFlag(m_MainMenuHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
-    //m_Overlay->SetOverlayFlag(m_HUDHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
 
-    int windowWidth, windowHeight;
+    int windowWidth{}, windowHeight{};
     auto* ctx = m_Game->m_MaterialSystem->GetRenderContext();
     ctx->GetWindowSize(windowWidth, windowHeight);
     ctx->Release();
@@ -95,20 +112,43 @@ VR::VR(Game *game)
     m_Overlay->SetOverlayCurvature(m_MainMenuHandle, 0.15f);
     m_Overlay->SetOverlayMouseScale(m_MainMenuHandle, &mouseScaleMenu);
 
+    // Hide the loading overlay once initialization is complete
+    m_Overlay->HideOverlay(m_LoadingScreenHandle);
+
     UpdatePosesAndActions();
 
     m_IsInitialized = true;
     m_IsVREnabled = true;
 }
 
+VR::~VR()
+{
+    Shutdown();
+}
+
+void VR::Shutdown()
+{
+    m_IsVREnabled = false;
+    m_IsInitialized = false;
+
+    if (m_Overlay)
+    {
+        if (m_LoadingScreenHandle != vr::k_ulOverlayHandleInvalid)
+            m_Overlay->DestroyOverlay(m_LoadingScreenHandle);
+        if (m_DashboardHandle != vr::k_ulOverlayHandleInvalid)
+            m_Overlay->DestroyOverlay(m_DashboardHandle);
+    }
+
+    m_Game = nullptr;
+}
+
 int VR::SetActionManifest(const char *fileName) 
 {
     char currentDir[MAX_STR_LEN];
     GetCurrentDirectory(MAX_STR_LEN, currentDir);
-    char path[MAX_STR_LEN];
-    sprintf_s(path, MAX_STR_LEN, "%s\\VR\\SteamVRActionManifest\\%s", currentDir, fileName);
+    std::string path = std::string(currentDir) + "\\VR\\SteamVRActionManifest\\" + fileName;
 
-    if (m_Input->SetActionManifestPath(path) != vr::VRInputError_None) 
+    if (m_Input->SetActionManifestPath(path.c_str()) != vr::VRInputError_None) 
     {
         Game::errorMsg("SetActionManifestPath failed");
     }
@@ -148,10 +188,9 @@ void VR::InstallApplicationManifest(const char *fileName)
 {
     char currentDir[MAX_STR_LEN];
     GetCurrentDirectory(MAX_STR_LEN, currentDir);
-    char path[MAX_STR_LEN];
-    sprintf_s(path, MAX_STR_LEN, "%s\\VR\\%s", currentDir, fileName);
+    std::string path = std::string(currentDir) + "\\VR\\" + fileName;
 
-    vr::VRApplications()->AddApplicationManifest(path);
+    vr::VRApplications()->AddApplicationManifest(path.c_str());
 }
 
 void VR::SetScreenSizeOverride(bool bState) {
@@ -835,7 +874,6 @@ void VR::UpdateHMDAngles() {
 
     QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);
 
-    //hmdAngLocal.x = (hmdAngLocal.x > 180 ? 180)
     hmdAngLocal.Normalize();
 
     m_HmdAngAbs = hmdAngLocal;
@@ -861,8 +899,6 @@ void VR::UpdateTracking()
 
     m_HmdPosRelativeRaw = hmdPosCentered;
 
-    //std::cout << "HMD - X: " << hmdWorldPos.x << ", Y: " << hmdWorldPos.y << ", Z: " << hmdWorldPos.z << "\n";
-
     Vector hmdPosCorrected = hmdPosCentered;
     float rotY = m_RotationOffset.y;
     float rotSin = sin(rotY * 3.14159265f / 180.0f);
@@ -881,10 +917,9 @@ void VR::UpdateTracking()
     m_AimPos = Trace((uint32_t*)localPlayer);
 
     if (m_AimMode == 2) {
-        C_Portal_Player* portalPlayer = (C_Portal_Player*)localPlayer;
+        auto portalPlayer = reinterpret_cast<C_Portal_Player*>(localPlayer);
 
-        auto activeWeaponAddr = (*(int(__thiscall**)(void*))(*(uintptr_t*)portalPlayer + 968))(portalPlayer);
-
+        auto activeWeaponAddr = ((tGetActiveWeapon)(m_Game->m_Offsets->GetActiveWeapon.address))(portalPlayer);
         if (activeWeaponAddr && m_DrawCrosshair) {
             CWeaponPortalBase* activeWeapon = (CWeaponPortalBase*)activeWeaponAddr;
 
@@ -913,8 +948,6 @@ void VR::UpdateTracking()
 
     Vector rightControllerPosLocal = m_RightControllerPose.TrackedDevicePos;
     QAngle rightControllerAngLocal = m_RightControllerPose.TrackedDeviceAng;
-
-    //std::cout << "Right Controller - X: " << rightControllerPosLocal.x << "Y: " << rightControllerPosLocal.y << "Z: " << rightControllerPosLocal.z << "\n";
 
     Vector hmdToRight = rightControllerPosLocal - hmdPosLocal;
     Vector hmdToLeft = leftControllerPosLocal - hmdPosLocal;
@@ -1320,16 +1353,14 @@ void VR::WaitForConfigUpdate()
 {
     char currentDir[MAX_STR_LEN];
     GetCurrentDirectory(MAX_STR_LEN, currentDir);
-    char configDir[MAX_STR_LEN];
-    sprintf_s(configDir, MAX_STR_LEN, "%s\\VR\\", currentDir);
-    HANDLE fileChangeHandle = FindFirstChangeNotificationA(configDir, false, FILE_NOTIFY_CHANGE_LAST_WRITE);
+    std::string configDir = std::string(currentDir) + "\\VR\\";
+    HANDLE fileChangeHandle = FindFirstChangeNotificationA(configDir.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
 
     std::filesystem::file_time_type configLastModified;
-    while (1)
+    while (m_Game)
     {
         try 
         {
-            // Windows only notifies of change within a directory, so extra check here for just config.txt
             auto configModifiedTime = std::filesystem::last_write_time("VR\\config.txt");
             if (configModifiedTime != configLastModified)
             {

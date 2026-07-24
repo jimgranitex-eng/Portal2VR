@@ -36,7 +36,8 @@ public:
 	vr::IVROverlay *m_Overlay = nullptr;
 
 	vr::VROverlayHandle_t m_MainMenuHandle;
-	//vr::VROverlayHandle_t m_HUDHandle;
+	vr::VROverlayHandle_t m_DashboardHandle;
+	vr::VROverlayHandle_t m_LoadingScreenHandle;
 
 	float m_HorizontalOffsetLeft;
 	float m_VerticalOffsetLeft;
@@ -197,6 +198,8 @@ public:
 
 	VR() {};
 	VR(Game *game);
+	~VR();
+	void Shutdown();
 	int SetActionManifest(const char *fileName);
 	void InstallApplicationManifest(const char *fileName);
 	void Update();

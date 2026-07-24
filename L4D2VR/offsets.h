@@ -75,6 +75,11 @@ public:
 
     // Aim related
     Offset CHudCrosshair_ShouldDraw = { "client.dll", 0x141BE0, "57 8B F9 80 BF ? ? ? ? ? 74 04 32 C0 5F C3" };
+    Offset GetActiveWeapon =          { "client.dll", 0x28AB20, "55 8B EC 56 8B F1 E8 ? ? ? ? 8B 0D ? ? ? ? 83 F8 FF" };
+
+    Offset GetFOV = { "client.dll", 0x2772B0, "55 8B EC 51 56 8B F1 E8 ? ? ? ? D9 5D FC 8B 06 8B 90 ? ? ? ? 8B CE FF D2" };
+    Offset GetDefaultFOV = { "client.dll", 0x279020, "A1 ? ? ? ? F3 0F 2C 40 ? C3" };
+    Offset GetViewModelFOV = { "client.dll", 0x28AB80, "A1 ? ? ? ? D9 40 2C C3" };
 
     // VR Eyes
     Offset UTIL_Portal_FirstAlongRay = { "server.dll", 0x377200, "55 8B EC 8B 0D ? ? ? ? 85 C9 74 19 A1 ? ? ? ?" };
@@ -88,10 +93,6 @@ public:
     Offset UpdateObjectVM = { "server.dll", 0x3CBB10, "53 8B DC 83 EC 08 83 E4 F0 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 81 EC ? ? ? ? 56 57 8B F9 8B 87 ? ? ? ? 83 F8" };
     Offset RotateObject = { "server.dll", 0x3C7890, "55 8B EC 0F 57 C0 F3 0F 10 4D ? 81 EC ? ? ? ? 0F 2E C8 9F 57 8B F9 F6 C4 44 7A 12" };
     Offset EyeAngles = { "server.dll", 0x103A50, "55 8B EC 8B 81 ? ? ? ? 83 EC 60 56 57 8B 3D ? ? ? ? 83 F8 FF 74 1D" };
-
-    Offset GetFOV = { "client.dll", 0x2772B0, "55 8B EC 51 56 8B F1 E8 ? ? ? ? D9 5D FC 8B 06 8B 90 ? ? ? ? 8B CE FF D2" };
-    Offset GetDefaultFOV = { "client.dll", 0x279020, "A1 ? ? ? ? F3 0F 2C 40 ? C3" };
-    Offset GetViewModelFOV = { "client.dll", 0x28AB80, "A1 ? ? ? ? D9 40 2C C3" };
 
     // Multiplayer
     Offset GetOwner = { "server.dll", 0xD7550, "8B 81 ? ? ? ? 83 F8 FF 74 23 8B 15 ? ? ? ?" };

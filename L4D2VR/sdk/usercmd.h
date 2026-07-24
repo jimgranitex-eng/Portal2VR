@@ -113,7 +113,9 @@ public:
 	bool	hasbeenpredicted;
 	char pad[25];
 };
+#ifndef _WIN64
 static_assert(sizeof(CUserCmd) == 0x58);
+#endif
 
 class CVerifiedUserCmd
 {

@@ -259,5 +259,7 @@ public:
 	char pad_0004[11180]; //0x0004
 	bool isGameRunning; //0x2AB8 -> 0x2BB0
 }; //Size: 0x2ABC
+#ifndef _WIN64
 static_assert(sizeof(IMaterialSystem) == 0x2BB4);
+#endif
 

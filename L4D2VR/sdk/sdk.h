@@ -360,7 +360,9 @@ public:
 	char pad_00bc[68]; //0x00BC
 	int32_t m_EdgeBlur; //0x0100
 }; //Size: 0x0104
+#ifndef _WIN64
 static_assert(sizeof(CViewSetup) == 0x0104);
+#endif
 
 class IBaseClientDLL
 {
@@ -1071,7 +1073,9 @@ public:
 	char meleeWeaponName[256]; //0x0CA4
 	char pad_0DA4[920]; //0x0DA4
 }; //Size: 0x113C
+#ifndef _WIN64
 static_assert(sizeof(CMeleeWeaponInfoStore) == 0x113C);
+#endif
 
 class IHandleEntity
 {
@@ -1747,7 +1751,9 @@ public:
 	char pad_010C[48]; //0x0114
 	int m_hGroundEntity; //0x0144
 }; //Size: 0x0148
+#ifndef _WIN64
 static_assert(sizeof(C_BasePlayer) == 0x0148);
+#endif
 
 class CBaseEdict
 {
@@ -2137,16 +2143,18 @@ public:
 	CBaseEntity* m_hOwner;
 	char pad_0001[3436];
 	int m_iLastFiredPortal; //0xE9C
-}; static_assert(sizeof(CWeaponPortalBase) == 0xEA0);
+};
+#ifndef _WIN64
+static_assert(sizeof(CWeaponPortalBase) == 0xEA0);
+#endif
 
 class C_Portal_Player
 {
 public:
 	inline CWeaponPortalBase* GetActivePortalWeapon() {
-		typedef CWeaponPortalBase* (__thiscall* tGetActivePortalWeapon)(void* thisptr);
-		//static tGetActivePortalWeapon oGetActivePortalWeapon = (tGetActivePortalWeapon)(g_Game->m_Offsets->GetActivePortalWeapon.address);
-		static tGetActivePortalWeapon oGetActivePortalWeapon = (tGetActivePortalWeapon)(*(uintptr_t*)this + 968);
-		return oGetActivePortalWeapon(this);
+		typedef int (__thiscall* GetActiveWeaponFn)(void*);
+		return reinterpret_cast<CWeaponPortalBase*>(
+			reinterpret_cast<GetActiveWeaponFn>(g_Game->m_Offsets->GetActiveWeapon.address)(this));
 	};
 
 	char pad_0000[9152]; //0000

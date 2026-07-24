@@ -86,10 +86,15 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>d3d9</TargetName>
+    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)thirdparty\minhook\include;$(SolutionDir)thirdparty\openvr\include;$(ProjectDir)sdk;$(SolutionDir)dxvk\include;$(SolutionDir)dxvk\src\d3d9\shaders;$(SolutionDir)dxvk\include\shaders;$(ProjectDir);$(SolutionDir);$(SolutionDir)dxvk\src\d3d9;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x64;$(SolutionDir)thirdparty\minhook\lib\$(Configuration);$(SolutionDir)thirdparty\openvr\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>dbgcore</TargetName>
+    <TargetName>d3d9</TargetName>
+    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)thirdparty\minhook\include;$(SolutionDir)thirdparty\openvr\include;$(ProjectDir)sdk;$(SolutionDir)dxvk\include;$(SolutionDir)dxvk\src\d3d9\shaders;$(SolutionDir)dxvk\include\shaders;$(ProjectDir);$(SolutionDir);$(SolutionDir)dxvk\src\d3d9;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x64;$(SolutionDir)thirdparty\minhook\lib\$(Configuration);$(SolutionDir)thirdparty\openvr\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -149,17 +154,19 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;INFRA_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;INFRA_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>openvr_api.lib;libMinHook.x64.lib;$(SolutionDir)dxvk\lib64\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>$(SolutionDir)dxvk\src\d3d9\d3d9.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,13 +174,12 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;INFRA_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;INFRA_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>C:\Dev\infra\openvr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -181,9 +187,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <ModuleDefinitionFile>$(ProjectDir)exports.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>C:\Dev\infra\openvr\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>$(SolutionDir)dxvk\src\d3d9\d3d9.def</ModuleDefinitionFile>
+      <AdditionalDependencies>openvr_api.lib;libMinHook.x64.lib;$(SolutionDir)dxvk\lib64\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

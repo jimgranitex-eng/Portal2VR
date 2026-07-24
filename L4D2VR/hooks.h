@@ -130,6 +130,8 @@ typedef int(__cdecl* tPrecacheParticleSystem)(const char* pParticleSystemName);
 typedef void(__thiscall* tPrecache)(void* thisptr);
 typedef bool(__thiscall* tCHudCrosshair_ShouldDraw)(void* thisptr);
 
+typedef int(__thiscall* tGetActiveWeapon)(void* thisptr);
+
 typedef void*(__cdecl* tUTIL_Portal_FirstAlongRay)(const Ray_t& ray, float& fMustBeCloserThan);
 typedef float(__cdecl* tUTIL_IntersectRayWithPortal)(const Ray_t& ray, const void* pPortal);
 typedef void(__cdecl* tUTIL_Portal_AngleTransform)(const VMatrix& matThisToLinked, const QAngle& qSource, QAngle& qTransformed);

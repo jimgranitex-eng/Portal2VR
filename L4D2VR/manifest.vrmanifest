@@ -6,7 +6,8 @@
 		"launch_type": "url",
 		"url": "steam://launch/620/VR",
 		"action_manifest_path" : "SteamVRActionManifest/action_manifest.json",
-		"image_path" : "portal2vr_capsule_main.png",
+		"image_path" : "../portal2vr_capsule_main.png",
+		"image_path_portrait" : "../portal2vr_portrait_main.png",
 
 		"strings": {
 			"en_us": {
