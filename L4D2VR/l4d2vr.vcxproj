@@ -256,7 +256,7 @@
     <None Include="..\dxvk\src\d3d9\d3d9.def" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\dxvk\src\d3d9\version.rc" />
+    <ResourceCompile Include="version.rc" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.txt" />
