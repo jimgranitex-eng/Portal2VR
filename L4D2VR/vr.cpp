@@ -889,7 +889,7 @@ void VR::UpdateTracking()
     GetPoses();
 
     int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
-    C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+    auto* localPlayer = reinterpret_cast<C_BasePlayer*>(m_Game->GetClientEntity(playerIndex));
     if (!localPlayer)
         return;
 
@@ -914,14 +914,14 @@ void VR::UpdateTracking()
 
     m_HmdPosRelative = hmdPosCorrected * m_VRScale;
 
-    m_AimPos = Trace((uint32_t*)localPlayer);
+    m_AimPos = Trace(reinterpret_cast<uint32_t*>(localPlayer));
 
     if (m_AimMode == 2) {
         auto portalPlayer = reinterpret_cast<C_Portal_Player*>(localPlayer);
 
         auto activeWeaponAddr = ((tGetActiveWeapon)(m_Game->m_Offsets->GetActiveWeapon.address))(portalPlayer);
         if (activeWeaponAddr && m_DrawCrosshair) {
-            CWeaponPortalBase* activeWeapon = (CWeaponPortalBase*)activeWeaponAddr;
+            auto* activeWeapon = reinterpret_cast<CWeaponPortalBase*>(activeWeaponAddr);
 
             if (portalPlayer->m_PointLaser) {
                 portalPlayer->m_PointLaser->SetControlPoint(1, m_AimPos);

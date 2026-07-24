@@ -1,0 +1,31 @@
+name: Build
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build-x86:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release|x86
+        run: >
+          msbuild l4d2vr.sln
+          /p:Configuration=Release /p:Platform=x86
+          /t:Rebuild
+          /consoleloggerparameters:ErrorsOnly
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Portal2VR_x86
+          path: Release/d3d9.dll

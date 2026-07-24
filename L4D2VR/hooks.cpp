@@ -245,11 +245,11 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	CViewSetup rightEyeView = setup;
 
 	int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
-	C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+	auto* localPlayer = reinterpret_cast<C_BasePlayer*>(m_Game->GetClientEntity(playerIndex));
 
 	// Left eye CViewSetup
 	QAngle tempAngle = QAngle(setup.angles.x, setup.angles.y, setup.angles.z);
-	leftEyeView.origin = m_VR->TraceEye((uint32_t*)localPlayer, position, m_VR->GetViewOriginLeft(position), tempAngle);
+	leftEyeView.origin = m_VR->TraceEye(reinterpret_cast<uint32_t*>(localPlayer), position, m_VR->GetViewOriginLeft(position), tempAngle);
 	leftEyeView.angles.y = tempAngle.y;
 
 	IMatRenderContext* rndrContext = matSystem->GetRenderContext();
