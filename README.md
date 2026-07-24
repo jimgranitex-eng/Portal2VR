@@ -5,13 +5,30 @@ Open-source VR mod for Portal 2. Motion controls, 6DoF, room-scale, grabbable ob
 
 Built on the L4D2VR framework with all fixes, dead code removal, and performance optimizations applied.
 
-## Quick Start
+## How to Launch (Important — Read Carefully)
 
-1. Download **[Portal2VR_v5.2.zip](./Portal2VR_v5.2.zip)** and extract into `steamapps\common\Portal 2`
-2. Start SteamVR
-3. Launch Portal 2 with: `-insecure -window -novid +mat_motion_blur_percent_of_screen_max 0 +mat_queue_mode 0 +mat_vsync 0 +mat_antialias 0 +mat_grain_scale_override 0 -width 1280 -height 720`
+**This is NOT a separate SteamVR app.** The mod works by replacing Portal 2's `d3d9.dll`. You launch Portal 2 normally from Steam — the mod auto-detects SteamVR and switches to VR mode.
 
-Full install guide and controls → see the README inside the zip or browse the [v5.2 source](./L4D2VR/).
+### Step-by-step
+
+1. **Download** [Portal2VR_v5.2.zip](./Portal2VR_v5.2.zip) and extract into `steamapps\common\Portal 2` (merge folders)
+
+2. **Connect your headset** and **start SteamVR**
+
+3. **Set launch options** — In Steam, right-click Portal 2 → Properties → Launch Options, paste:
+   ```
+   -insecure -window -novid +mat_motion_blur_percent_of_screen_max 0 +mat_queue_mode 0 +mat_vsync 0 +mat_antialias 0 +mat_grain_scale_override 0 -width 1280 -height 720
+   ```
+
+4. **Launch Portal 2** from your Steam library (same as always)
+
+5. **The mod activates automatically** — SteamVR will show the game in your headset. No toggle needed.
+
+> **If it doesn't work:** Make sure SteamVR is running BEFORE you launch Portal 2. Disable SteamVR Theater mode in Steam settings.
+
+### To go back to normal Portal 2
+
+Delete the `VR\` folder from Portal 2 and restore your original `bin\d3d9.dll` backup.
 
 ## Repository Structure
 
