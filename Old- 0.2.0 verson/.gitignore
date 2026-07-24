@@ -396,13 +396,4 @@ FodyWeavers.xsd
 /Release
 /Debug
 /L4D2VR/Debug
-/L4D2VR/Release*.zip
-*.pdb
-*.idb
-Release/
-Debug/
-x64/
-x86/
-
-# Zip packages
-*.zip
+/L4D2VR/Release
