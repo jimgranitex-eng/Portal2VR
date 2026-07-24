@@ -1,6 +1,6 @@
 # Portal 2 VR Mod — Complete Developer Guide
 
-**v5.3.0** — July 24, 2026
+**v5.3.0.5** — July 24, 2026
 
 ---
 
@@ -34,6 +34,7 @@ Portal2VR/
 │   ├── manifest.vrmanifest       # SteamVR application manifest
 │   ├── portal2vr_capsule_main.png  # SteamVR store capsule image
 │   ├── portal2vr_portrait_main.png # SteamVR store portrait image
+│   ├── version.rc                # DLL metadata (v5.3.0.5)
 │   ├── l4d2vr.vcxproj            # VS2022 project file
 │   ├── l4d2vr.vcxproj.filters    # VS filter organization
 │   ├── sdk/                      # Source SDK headers
@@ -61,16 +62,14 @@ Portal2VR/
 │   └── openvr/                   # SteamVR SDK headers + lib + dll
 ├── archive/
 │   └── v0.2.0/                   # Original Gistix release (reference only)
-├── .github/                      # GitHub metadata
-│   ├── README.md
-│   ├── FUNDING.yml
-│   └── ISSUE_TEMPLATE/           # Bug report + feature request templates
+├── .github/workflows/            # CI (build.yml: x86 + x64 automated)
+│   └── build.yml
 ├── .gitignore
 ├── l4d2vr.sln                    # Visual Studio 2022 solution
 ├── README.md                     # Project readme
 ├── GUIDE.md                      # This file
 ├── imgs/                         # Project images
-└── Portal2VR_v5.3.0.zip          # Pre-built release package
+└── Portal2VR_v5.3.0.5.zip        # Pre-built release package
 ```
 
 ---
@@ -128,13 +127,16 @@ git submodule init
 git submodule update
 
 msbuild l4d2vr.sln /p:Configuration=Release /p:Platform=x86 /t:Build
+msbuild l4d2vr.sln /p:Configuration=Release /p:Platform=x64 /t:Build
 ```
 
-Output: `Release/d3d9.dll` (1,673,216 bytes, 0 errors)
+Output: `Release/d3d9.dll` (x86, 0 errors) and `x64/Release/d3d9.dll` (x64, 0 errors)
 
 ### Configuration
 - **Debug|Win32**: Debug build with console alloc, no optimizations
-- **Release|Win32**: Production build with LTCG, optimized
+- **Debug|x64**: Debug x64 build
+- **Release|Win32**: Production x86 build with LTCG, optimized
+- **Release|x64**: Production x64 build with LTCG, optimized
 - Both targets deploy to `C:\Program Files (x86)\Steam\steamapps\common\Portal 2\`
   automatically on successful build
 
@@ -165,7 +167,7 @@ Output: `Release/d3d9.dll` (1,673,216 bytes, 0 errors)
 - `Game::errorMsg()` — MessageBox wrapper
 - `Game::GetInterface()` — Source engine interface resolution
 
-### vr.cpp (1,359 lines)
+### vr.cpp (1,390 lines)
 - `VR::VR()` — `VR_Init` with silent fallback, FOV calc, manifest install
 - `VR::Update()` — Per-frame: texture submit, poses, input
 - `VR::CreateVRTextures()` — Render target allocation for both eyes
@@ -175,7 +177,7 @@ Output: `Release/d3d9.dll` (1,673,216 bytes, 0 errors)
 - `VR::UpdateTracking()` — HMD position, controller position, viewmodel offsets
 - `VR::ParseConfigFile()` — Settings parser with live-reload watcher
 
-### hooks.cpp (905 lines)
+### hooks.cpp (905 lines — 0 C-style casts, all reinterpret_cast/static_cast)
 - Constructor enables all hooks via MinHook
 - `hkEmitSound` — VTable hook on `IEngineSound`
 - `hkRenderView` — Triggers VR texture submission per frame
@@ -242,7 +244,7 @@ net_graph 0
 ```cmd
 # Manual zip creation
 Compress-Archive -Path bin\d3d9.dll,d3d9.dll,VR\*,dxvk.conf,README.md ^
-  -DestinationPath Portal2VR_v5.3.0.zip
+   -DestinationPath Portal2VR_v5.3.0.5.zip
 ```
 
 ---
