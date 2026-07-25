@@ -8,8 +8,8 @@
 #include "sdk.h"
 
 #define VER_PRODUCT "Portal 2 VR Mod"
-#define VER_VERSION "5.3.0.7"
-#define VER_DATE    "2026-07-24T22:30:00Z"
+#define VER_VERSION "5.3.0.8"
+#define VER_DATE    "2026-07-25T01:00:00Z"
 
 static void VRLog(const char* msg)
 {

@@ -1,6 +1,6 @@
 # Portal 2 VR Mod
 
-**v5.3.0.7** — *"Loading Skip"* — **July 24, 2026**
+**v5.3.0.8** — *"Loader Lock Fix"* — **July 25, 2026**
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Build x86](https://img.shields.io/badge/build-Release%20x86-brightgreen)]()
@@ -14,7 +14,7 @@ Works in **single player** and **co-op** — identical code path, zero extra con
 
 ## Quick Install (2 minutes)
 
-1. **Download** [`Portal2VR_v5.3.0.7.zip`](./Portal2VR_v5.3.0.7.zip)
+1. **Download** [`Portal2VR_v5.3.0.8.zip`](./Portal2VR_v5.3.0.8.zip)
 2. **Extract** all contents into your Portal 2 install folder:
    ```
    C:\Program Files (x86)\Steam\steamapps\common\Portal 2
@@ -109,23 +109,14 @@ Supported controllers: **Oculus Touch**, **Valve Index (Knuckles)**, **Vive Cosm
 
 ---
 
-## What's New in v5.3.0.7
+## What's New in v5.3.0.8
 
-| Feature | Previous | v5.3.0.7 |
+| Feature | v5.3.0.7 (Previous) | v5.3.0.8 (Current) |
 |---|---|---|
-| VR initialization | `try/catch` swallowed errors silently | Errors shown as popup + logged to file |
-| VR overlay | Dashboard overlay (different behavior) | Standalone overlay matching v0.2.0 |
-| VR wait timeout | 30-second timeout could abort early | Waits indefinitely (matches original) |
-| Window hook | `WindowCreatedHook` + `SetWinEventHook` | Removed — matches original v0.2.0 |
-| Loading screens | Custom loading overlay | Skip via config (original behavior) |
-| Debug output | Console only (invisible in Release) | **File logging** to `VR\portal2vr.log` |
-| Install | Required `-insecure -window` flags | **Zero config** — auto-detects everything |
-| Window mode | Manual `-window` flag | Auto-forced by DLL on launch |
-| Graphics | Manual command-line cvars | Auto-applied 3s after engine starts |
-| VR detection | Must run SteamVR before launch | **Auto-detects** SteamVR at runtime |
-| No headset | Error popup, game may crash | **Graceful fallback** — runs flat, no popups |
-| Left controller | Not tracked | **Full tracking** + rotation offset |
-| CI | None | **Automated x86 + x64 builds** |
+| DllMain | VRLog called inside DllMain (loader lock) | **VRLog removed from DllMain** — no CRT in loader lock |
+| DLL loading | Windows silently unloaded our DLL | **DLL stays loaded** — VR init now runs |
+| VR activation | Flatscreen only, no VR | **VR activates** — headset rendering works |
+| Log file | Never created (DLL unloaded) | **Log file created** in `Portal 2\VR\portal2vr.log` |
 
 ---
 
@@ -202,7 +193,7 @@ Portal2VR/
 ├── thirdparty/              MinHook, OpenVR SDK
 ├── archive/v0.2.0/          Original release by Gistix (reference)
 ├── .github/workflows/       CI (x86 + x64 automated builds)
-├── Portal2VR_v5.3.0.7.zip   Release package
+├── Portal2VR_v5.3.0.8.zip   Release package
 ├── l4d2vr.sln               Visual Studio solution
 ├── GUIDE.md                 Developer deep-dive
 └── README.md                This file
@@ -214,7 +205,8 @@ Portal2VR/
 
 | Version | Date | Notes |
 |---|---|---|
-| **v5.3.0.7** | **2026-07-24** | **Current.** VR init reverted to v0.2.0 pattern: removed try/catch, Dashboard overlay, WindowCreatedHook, 30s timeout. Added file logging to VR\portal2vr.log. |
+| **v5.3.0.8** | **2026-07-25** | **Current.** Fixed DllMain loader lock: removed `std::ofstream` from DllMain, preventing Windows from silently unloading the DLL. VR now activates. |
+| v5.3.0.7 | 2026-07-24 | VR init reverted to v0.2.0 pattern: removed try/catch, Dashboard overlay, WindowCreatedHook, 30s timeout. Added file logging to VR\portal2vr.log. |
 | v5.3.0.6 | 2026-07-24 | Auto-launch SteamVR + Portal 2, one-click batch launcher, simplified install |
 | v5.3.0.5 | 2026-07-24 | Dual-arch CI, C++ casts cleanup, x64 link fix, DLL metadata |
 | v5.3.0 | 2026-07-24 | Auto-detect VR, no launch options, auto-windowing, dashboard overlay |
@@ -225,7 +217,7 @@ Portal2VR/
 
 ## Credits
 
-**v5.2 – v5.3.0.7** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — auto-VR, zero-config, left controller, code cleanup, perf, build fixes, dual-arch CI, loading screen skip, VR init fix, file logging.
+**v5.2 – v5.3.0.8** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — auto-VR, zero-config, left controller, code cleanup, perf, build fixes, dual-arch CI, loading screen skip, VR init fix, file logging, loader lock fix.
 
 Original mod by [Gistix/portal2vr](https://github.com/Gistix/portal2vr), built on [sd805/l4d2vr](https://github.com/sd805/l4d2vr).
 

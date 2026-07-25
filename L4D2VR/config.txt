@@ -1,4 +1,4 @@
-# Portal 2 VR Mod v5.3.0.7 (2026-07-24)
+# Portal 2 VR Mod v5.3.0.8 (2026-07-25)
 # Auto-detect VR — no launch options needed
 #
 # Edit this file to change settings. Changes apply live while the game is running.

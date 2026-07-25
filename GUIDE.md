@@ -1,6 +1,6 @@
 # Portal 2 VR Mod — Complete Developer Guide
 
-**v5.3.0.7** — July 24, 2026 22:30 UTC
+**v5.3.0.8** — July 25, 2026
 
 ---
 
@@ -34,7 +34,7 @@ Portal2VR/
 │   ├── manifest.vrmanifest       # SteamVR application manifest
 │   ├── portal2vr_capsule_main.png  # SteamVR store capsule image
 │   ├── portal2vr_portrait_main.png # SteamVR store portrait image
-│   ├── version.rc                # DLL metadata (v5.3.0.7)
+│   ├── version.rc                # DLL metadata (v5.3.0.8)
 │   ├── launch_vr.bat             # One-click SteamVR + Portal 2 launcher
 │   ├── l4d2vr.vcxproj            # VS2022 project file
 │   ├── l4d2vr.vcxproj.filters    # VS filter organization
@@ -70,7 +70,7 @@ Portal2VR/
 ├── README.md                     # Project readme
 ├── GUIDE.md                      # This file
 ├── imgs/                         # Project images
-└── Portal2VR_v5.3.0.7.zip        # Pre-built release package
+└── Portal2VR_v5.3.0.8.zip        # Pre-built release package
 ```
 
 ---
@@ -158,7 +158,7 @@ Output: `Release/d3d9.dll` (x86, 0 errors) and `x64/Release/d3d9.dll` (x64, 0 er
 
 ### dllmain.cpp
 - Version defines `VER_PRODUCT`, `VER_VERSION`, `VER_DATE`
-- `VRLog()` — file-based logger writing to `VR\portal2vr.log` with timestamps
+- `VRLog()` — file-based logger writing to `VR\portal2vr.log` with timestamps (CRT safe — only called from thread, never DllMain)
 - Entry point: `DLL_PROCESS_ATTACH` → `DisableThreadLibraryCalls` → `CreateThread(InitL4D2VR)`
 - `InitL4D2VR` creates `Game` instance, logs completion
 
@@ -244,7 +244,7 @@ net_graph 0
 ### Release Packaging
 ```cmd
 Compress-Archive -Path bin\d3d9.dll,d3d9.dll,VR\* ^
-   -DestinationPath Portal2VR_v5.3.0.7.zip
+   -DestinationPath Portal2VR_v5.3.0.8.zip
 ```
 
 ---
@@ -292,7 +292,15 @@ d3d9.dll (output)
 | Black screen in HMD | Overlay texture init race | Restart game with SteamVR already running |
 | Stuttering | Shader compilation stutter | Enable background Vulkan shader pre-caching in Steam |
 | Wrong offsets | Game updated | Update signatures in `offsets.h`; rebuild |
-| No log file created | DLL didn't load | Verify `d3d9.dll` is in Portal 2 root and `bin\` |
+| No log file created | DLL silently unloaded by Windows | Check for CRT calls in DllMain (loader lock deadlock) |
+
+### DllMain Loader Lock Rule
+
+**NEVER use CRT functions inside `DllMain`**. The loader lock prevents `std::ofstream`, `sprintf_s`, `std::cout`, and other CRT calls from working. Windows will silently unload the DLL if `DllMain` deadlocks.
+
+- `VRLog()` MUST only be called from threads created after `DllMain` returns
+- DllMain should only do: `DisableThreadLibraryCalls` + `CreateThread`
+- All initialization happens in the thread, after the loader lock is released
 
 ### Debug Logging
 
