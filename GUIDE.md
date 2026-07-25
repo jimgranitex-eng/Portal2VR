@@ -79,14 +79,13 @@ Portal2VR/
 
 ### 3.1 DLL Injection Chain
 1. Portal 2 loads `d3d9.dll` (either from root or `bin\`)
-2. `DllMain` → creates `InitL4D2VR` thread
-3. `InitL4D2VR` prints version banner, creates `Game` instance
-4. `Game` constructor spins until `client.dll`, `engine.dll`, `materialsystem.dll`, `server.dll`, `vgui2.dll` load
+2. `DllMain` → `DLL_PROCESS_ATTACH` → `DisableThreadLibraryCalls` → creates `InitL4D2VR` thread
+3. `InitL4D2VR` logs startup, creates `Game` instance
+4. `Game` constructor spins until `client.dll`, `engine.dll`, `materialsystem.dll`, `server.dll`, `vgui2.dll` load (60s timeout per DLL)
 5. Interfaces are obtained via `CreateInterface`
-6. `VR` is constructed — attempts SteamVR init (silent on failure)
+6. `VR` is constructed — calls `VR_Init`; on failure shows `Game::errorMsg()` popup and writes to log; on success continues init
 7. `Hooks` are set up via MinHook
 8. `AutoExecThread` is spawned — applies graphics cvars after 3s
-9. `AutoWindowThread` is spawned — forces windowed 1280×720
 
 ### 3.2 VR Rendering Loop
 - `D3D9VR_Present()` (from dxvk hook) → triggers `VR::Update()`
@@ -94,6 +93,7 @@ Portal2VR/
 - Eye textures are created as named render targets via MaterialSystem
 - Overlay handles menu/HUD rendering in VR space
 - Config file is watched via `FindFirstChangeNotification` for live reload
+- All init steps logged to `VR\portal2vr.log` with timestamps
 
 ### 3.3 Input Pipeline
 - SteamVR action handles mapped to engine commands
@@ -158,18 +158,18 @@ Output: `Release/d3d9.dll` (x86, 0 errors) and `x64/Release/d3d9.dll` (x64, 0 er
 
 ### dllmain.cpp
 - Version defines `VER_PRODUCT`, `VER_VERSION`, `VER_DATE`
-- `ForceWindowedMode()` — strips fullscreen via `SetWindowLongPtr`
-- `AutoWindowThread` — retries 60×500ms to find game window
-- Entry point creates Game, spawns auto-window thread
+- `VRLog()` — file-based logger writing to `VR\portal2vr.log` with timestamps
+- Entry point: `DLL_PROCESS_ATTACH` → `DisableThreadLibraryCalls` → `CreateThread(InitL4D2VR)`
+- `InitL4D2VR` creates `Game` instance, logs completion
 
 ### game.cpp
-- `Game::Game()` — Interface acquisition, object construction
+- `Game::Game()` — Interface acquisition, object construction, file logging at each step
 - `AutoExecThread` — Applies 12 optimal graphics cvars after 3s delay
-- `Game::errorMsg()` — MessageBox wrapper
+- `Game::errorMsg()` — MessageBox wrapper (visible error for VR_Init failures)
 - `Game::GetInterface()` — Source engine interface resolution
 
-### vr.cpp (1,390 lines)
-- `VR::VR()` — `VR_Init` with silent fallback, FOV calc, manifest install
+### vr.cpp (1,449 lines)
+- `VR::VR()` — `VR_Init` with error popup + file logging on failure, FOV calc, manifest install
 - `VR::Update()` — Per-frame: texture submit, poses, input
 - `VR::CreateVRTextures()` — Render target allocation for both eyes
 - `VR::SubmitVRTextures()` — Submit to SteamVR compositor
@@ -233,10 +233,9 @@ net_graph 0
 ## 7. Deployment
 
 ### Manual Install
-1. Copy `d3d9.dll` to `Portal 2/bin/` (replaces original)
-2. Copy `d3d9.dll` to `Portal 2/` root (backup load path)
-3. Copy `VR/` folder to `Portal 2/`
-4. Copy `dxvk.conf` to `Portal 2/`
+1. Copy `d3d9.dll` to `Portal 2\` root (x86 VR loader)
+2. Copy `d3d9.dll` to `Portal 2\bin\` (x64 VR bridge)
+3. Copy `VR\` folder contents to `Portal 2\VR\`
 
 ### Auto-Deploy (Build)
 - Post-build event in vcxproj copies both to `bin\` and root of Portal 2 install
@@ -244,8 +243,7 @@ net_graph 0
 
 ### Release Packaging
 ```cmd
-# Manual zip creation
-Compress-Archive -Path bin\d3d9.dll,d3d9.dll,VR\*,dxvk.conf,README.md ^
+Compress-Archive -Path bin\d3d9.dll,d3d9.dll,VR\* ^
    -DestinationPath Portal2VR_v5.3.0.7.zip
 ```
 
@@ -290,7 +288,18 @@ d3d9.dll (output)
 | DLL not loading | Steam updated Portal 2's d3d9.dll | Reinstall mod files |
 | Crash on launch | DXVK Vulkan device init failure | Update GPU drivers; verify Vulkan runtime |
 | No VR but game runs | SteamVR not running or no headset | Start SteamVR; check headset connection |
-| Audio issues | Sound cache stale | Run `portal2_dlc3/UpdateSoundCache.cmd` |
+| Error popup on launch | VR_Init failed | Read error; usually SteamVR connection or driver issue |
 | Black screen in HMD | Overlay texture init race | Restart game with SteamVR already running |
 | Stuttering | Shader compilation stutter | Enable background Vulkan shader pre-caching in Steam |
 | Wrong offsets | Game updated | Update signatures in `offsets.h`; rebuild |
+| No log file created | DLL didn't load | Verify `d3d9.dll` is in Portal 2 root and `bin\` |
+
+### Debug Logging
+
+The mod writes a detailed init log to `Portal 2\VR\portal2vr.log` on every launch. Check this file to see exactly where initialization succeeded or failed. The log includes:
+- DLL attachment and thread creation
+- Each engine DLL loaded (client, engine, materialsystem, server, vgui2)
+- Interface acquisition
+- VR_Init result
+- Compositor, overlay, and render target status
+- Final initialization state
