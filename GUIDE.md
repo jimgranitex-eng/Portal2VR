@@ -1,6 +1,6 @@
 # Portal 2 VR Mod — Complete Developer Guide
 
-**v5.3.0.5** — July 24, 2026
+**v5.3.0.6** — July 24, 2026 17:15 UTC
 
 ---
 
@@ -34,7 +34,8 @@ Portal2VR/
 │   ├── manifest.vrmanifest       # SteamVR application manifest
 │   ├── portal2vr_capsule_main.png  # SteamVR store capsule image
 │   ├── portal2vr_portrait_main.png # SteamVR store portrait image
-│   ├── version.rc                # DLL metadata (v5.3.0.5)
+│   ├── version.rc                # DLL metadata (v5.3.0.6)
+│   ├── launch_vr.bat             # One-click SteamVR + Portal 2 launcher
 │   ├── l4d2vr.vcxproj            # VS2022 project file
 │   ├── l4d2vr.vcxproj.filters    # VS filter organization
 │   ├── sdk/                      # Source SDK headers
@@ -69,7 +70,7 @@ Portal2VR/
 ├── README.md                     # Project readme
 ├── GUIDE.md                      # This file
 ├── imgs/                         # Project images
-└── Portal2VR_v5.3.0.5.zip        # Pre-built release package
+└── Portal2VR_v5.3.0.6.zip        # Pre-built release package
 ```
 
 ---
@@ -244,7 +245,7 @@ net_graph 0
 ```cmd
 # Manual zip creation
 Compress-Archive -Path bin\d3d9.dll,d3d9.dll,VR\*,dxvk.conf,README.md ^
-   -DestinationPath Portal2VR_v5.3.0.5.zip
+   -DestinationPath Portal2VR_v5.3.0.6.zip
 ```
 
 ---

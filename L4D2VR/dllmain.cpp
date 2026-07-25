@@ -7,8 +7,8 @@
 #include "sdk.h"
 
 #define VER_PRODUCT "Portal 2 VR Mod"
-#define VER_VERSION "5.3.0.5"
-#define VER_DATE    "2026-07-24T16:30:00Z"
+#define VER_VERSION "5.3.0.6"
+#define VER_DATE    "2026-07-24T17:15:00Z"
 
 static bool g_WindowPatched = false;
 static HWINEVENTHOOK g_WinEventHook = nullptr;
