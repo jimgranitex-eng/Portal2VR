@@ -54,7 +54,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-            VRLog("DLL_PROCESS_ATTACH");
             DisableThreadLibraryCalls(hModule);
             CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitL4D2VR), hModule, 0, NULL);
             break;
@@ -65,5 +64,3 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     }
     return TRUE;
 }
-
-
