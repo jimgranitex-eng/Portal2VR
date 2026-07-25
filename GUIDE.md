@@ -10,7 +10,7 @@ Portal 2 VR Mod is a Windows x86 DLL (`d3d9.dll`) that hooks into Portal 2 via D
 (D3D9→Vulkan bridge) and adds full SteamVR motion controls, 6DoF tracking, room-scale,
 grabbable objects, and portal gun aiming.
 
-The DLL replaces Portal 2's built-in `bin\d3d9.dll` and intercepts the D3D9 renderer
+The DLL replaces Portal 2's built-in `d3d9.dll` (and `bin/d3d9.dll` for x64) and intercepts the D3D9 renderer
 to render stereoscopic views to the VR headset while injecting VR input into the
 engine's movement/aiming systems.
 
