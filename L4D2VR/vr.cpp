@@ -25,7 +25,7 @@ VR::VR(Game *game)
         m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
         if (error != vr::VRInitError_None)
         {
-            std::cout << "Portal2VR: SteamVR not available (error " << (int)error << ") — running in flatscreen mode" << std::endl;
+            std::cout << "Portal2VR: SteamVR not available (error " << static_cast<int>(error) << ") — running in flatscreen mode" << std::endl;
             m_IsInitialized = false;
             m_IsVREnabled = false;
             return;
@@ -159,17 +159,29 @@ VR::~VR()
 
 void VR::Shutdown()
 {
+    if (!m_IsInitialized && !m_IsVREnabled)
+        return;
+
     m_IsVREnabled = false;
     m_IsInitialized = false;
 
     if (m_Overlay)
     {
         if (m_LoadingScreenHandle != vr::k_ulOverlayHandleInvalid)
+        {
             m_Overlay->DestroyOverlay(m_LoadingScreenHandle);
+            m_LoadingScreenHandle = vr::k_ulOverlayHandleInvalid;
+        }
         if (m_MainMenuHandle != vr::k_ulOverlayHandleInvalid)
+        {
             m_Overlay->DestroyOverlay(m_MainMenuHandle);
+            m_MainMenuHandle = vr::k_ulOverlayHandleInvalid;
+        }
         if (m_DashboardHandle != vr::k_ulOverlayHandleInvalid)
+        {
             m_Overlay->DestroyOverlay(m_DashboardHandle);
+            m_DashboardHandle = vr::k_ulOverlayHandleInvalid;
+        }
     }
 
     m_Game = nullptr;
@@ -357,8 +369,8 @@ void VR::SubmitVRTextures()
             rndrContext->GetWindowSize(windowWidth, windowHeight);
             rndrContext->Release();
 
-            bounds.uMax = (float)windowWidth / m_RenderWidth;
-            bounds.vMax = (float)windowHeight / m_RenderHeight;
+bounds.uMax = static_cast<float>(windowWidth) / m_RenderWidth;
+			bounds.vMax = static_cast<float>(windowHeight) / m_RenderHeight;
             vr::VROverlay()->SetOverlayTexelAspect(m_MainMenuHandle, bounds.vMax / bounds.uMax);
         }
         else
@@ -601,7 +613,7 @@ void VR::ProcessMenuInput()
                 break;
 
             case vr::VREvent_ScrollDiscrete:
-                m_Game->m_VguiInput->InternalMouseWheeled((int)vrEvent.data.scroll.ydelta);
+                m_Game->m_VguiInput->InternalMouseWheeled(static_cast<int>(vrEvent.data.scroll.ydelta));
                 break;
             }
         }

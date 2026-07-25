@@ -35,9 +35,9 @@ public:
 	vr::IVRInput *m_Input = nullptr;
 	vr::IVROverlay *m_Overlay = nullptr;
 
-	vr::VROverlayHandle_t m_MainMenuHandle;
-	vr::VROverlayHandle_t m_DashboardHandle;
-	vr::VROverlayHandle_t m_LoadingScreenHandle;
+	vr::VROverlayHandle_t m_MainMenuHandle = vr::k_ulOverlayHandleInvalid;
+	vr::VROverlayHandle_t m_DashboardHandle = vr::k_ulOverlayHandleInvalid;
+	vr::VROverlayHandle_t m_LoadingScreenHandle = vr::k_ulOverlayHandleInvalid;
 
 	float m_HorizontalOffsetLeft;
 	float m_VerticalOffsetLeft;

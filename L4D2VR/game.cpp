@@ -87,7 +87,7 @@ Game::Game()
     if (!m_EngineClient || !m_MaterialSystem)
     {
         errorMsg("Critical engine interfaces missing — VR cannot initialize.");
-        m_Initialized = true;
+        m_Initialized = false;
         return;
     }
 

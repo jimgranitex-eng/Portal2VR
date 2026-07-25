@@ -374,7 +374,7 @@ float __fastcall Hooks::dProcessUsercmds(void *ecx, void *edx, edict_t *player, 
 	{
 		Server_BaseEntity *pPlayer = reinterpret_cast<Server_BaseEntity*>(player->m_pUnk->GetBaseEntity());
 		int index = EntityIndex(pPlayer);
-		if (index >= 0 && index < (int)m_Game->m_PlayersVRInfo.size())
+		if (index >= 0 && index < static_cast<int>(m_Game->m_PlayersVRInfo.size()))
 			m_Game->m_CurrentUsercmdID = index;
 	}
 
@@ -409,7 +409,7 @@ int Hooks::dReadUsercmd(bf_read *buf, CUserCmd* move, CUserCmd* from)
 	auto result = hkReadUsercmd.fOriginal(buf, move, from);
 
 	int i = m_Game->m_CurrentUsercmdID;
-	if (i < 0 || i >= (int)m_Game->m_PlayersVRInfo.size())
+	if (i < 0 || i >= static_cast<int>(m_Game->m_PlayersVRInfo.size()))
 		return result;
 
 	auto& vrPlayer = m_Game->m_PlayersVRInfo[i];
@@ -574,7 +574,7 @@ Vector* Hooks::dWeapon_ShootPosition(void* ecx, void* edx, Vector* eyePos)
 	if (m_VR->m_IsVREnabled && localIndex == index) {
 		*result = m_VR->GetRightControllerAbsPos();	
 	}
-	else if (index >= 0 && index < (int)m_Game->m_PlayersVRInfo.size())
+	else if (index >= 0 && index < static_cast<int>(m_Game->m_PlayersVRInfo.size()))
 	{
 		auto& vrPlayer = m_Game->m_PlayersVRInfo[index];
 		if (vrPlayer.isUsingVR)
@@ -601,7 +601,7 @@ bool __fastcall Hooks::dTraceFirePortal(void* ecx, void* edx, const Vector& vTra
 				vNewTraceStart = m_VR->GetRightControllerAbsPos();
 				vNewDirection = m_VR->m_RightControllerForward;
 			}
-			else if (index >= 0 && index < (int)m_Game->m_PlayersVRInfo.size())
+			else if (index >= 0 && index < static_cast<int>(m_Game->m_PlayersVRInfo.size()))
 			{
 				auto& vrPlayer = m_Game->m_PlayersVRInfo[index];
 				if (vrPlayer.isUsingVR)
@@ -827,7 +827,7 @@ QAngle& __fastcall Hooks::dEyeAngles(void* ecx, void* edx) {
 		if (m_VR->m_IsVREnabled && localIndex == index) {
 			return m_VR->GetRightControllerAbsAngleConst();
 		}
-		else if (index >= 0 && index < (int)m_Game->m_PlayersVRInfo.size())
+		else if (index >= 0 && index < static_cast<int>(m_Game->m_PlayersVRInfo.size()))
 		{
 			auto& vrPlayer = m_Game->m_PlayersVRInfo[index];
 			if (vrPlayer.isUsingVR)
