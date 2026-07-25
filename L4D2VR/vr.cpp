@@ -17,10 +17,12 @@
 
 static void VRLog(const char* msg)
 {
-    char dir[MAX_STR_LEN];
-    GetCurrentDirectory(MAX_STR_LEN, dir);
-    char path[MAX_STR_LEN];
-    sprintf_s(path, "%s\\VR\\portal2vr.log", dir);
+    char exePath[MAX_PATH];
+    GetModuleFileName(NULL, exePath, MAX_PATH);
+    char* lastSlash = strrchr(exePath, '\\');
+    if (lastSlash) *lastSlash = '\0';
+    char path[MAX_PATH];
+    sprintf_s(path, "%s\\VR\\portal2vr.log", exePath);
     std::ofstream log(path, std::ios::app);
     if (log.is_open())
     {
