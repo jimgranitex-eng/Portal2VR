@@ -99,7 +99,7 @@ Output: `Release\d3d9.dll` (x86) and `x64\Release\d3d9.dll` (x64)
 
 ```
 Portal2VR/
-├── L4D2VR/                  Source code (v5.3.0.5)
+├── L4D2VR/                  Source code (v5.3.0.7)
 │   ├── dllmain.cpp          Entry, auto-windowing, version
 │   ├── game.cpp             Engine hooks, auto-exec settings
 │   ├── vr.cpp               VR core, silent fallback
