@@ -25,7 +25,7 @@ static const char* g_AutoExecCmds[] = {
 
 static DWORD WINAPI AutoExecThread(LPVOID param)
 {
-    Game* game = (Game*)param;
+    Game* game = static_cast<Game*>(param);
     Sleep(3000);
     for (int i = 0; i < sizeof(g_AutoExecCmds) / sizeof(g_AutoExecCmds[0]); ++i)
         game->ClientCmd_Unrestricted(g_AutoExecCmds[i]);
@@ -34,32 +34,62 @@ static DWORD WINAPI AutoExecThread(LPVOID param)
 
 Game::Game()
 {
-    while (!(m_BaseClient = (uintptr_t)GetModuleHandle("client.dll")))
-        Sleep(50);
-    while (!(m_BaseEngine = (uintptr_t)GetModuleHandle("engine.dll")))
-        Sleep(50);
-    while (!(m_BaseMaterialSystem = (uintptr_t)GetModuleHandle("materialsystem.dll")))
-        Sleep(50);
-    while (!(m_BaseServer = (uintptr_t)GetModuleHandle("server.dll")))
-        Sleep(50);
-    while (!(m_BaseVgui2 = (uintptr_t)GetModuleHandle("vgui2.dll")))
-        Sleep(50);
+    const int kMaxWaitMs = 60000; // 60 second timeout for DLL loading
+    int waitMs = 0;
 
-    m_ClientEntityList = (IClientEntityList *)GetInterface("client.dll", "VClientEntityList003");
-    m_EngineTrace = (IEngineTrace *)GetInterface("engine.dll", "EngineTraceClient004");
-    m_EngineClient = (IEngineClient *)GetInterface("engine.dll", "VEngineClient015");
-    m_MaterialSystem = (IMaterialSystem *)GetInterface("MaterialSystem.dll", "VMaterialSystem080");
-    m_ClientViewRender = (IViewRender *)GetInterface("client.dll", "VEngineRenderView013");
-    m_EngineViewRender = (IViewRender *)GetInterface("engine.dll", "VEngineRenderView013");
-    m_ModelInfo = (IModelInfo *)GetInterface("engine.dll", "VModelInfoClient004");
-    m_ModelRender = (IModelRender *)GetInterface("engine.dll", "VEngineModel016");
-    m_VguiInput = (IInput *)GetInterface("vgui2.dll", "VGUI_InputInternal001");
-    m_VguiSurface = (ISurface *)GetInterface("vguimatsurface.dll", "VGUI_Surface031");
-    m_EngineSound = (IEngineSound *)GetInterface("engine.dll", "IEngineSound003");
+    while (!(m_BaseClient = reinterpret_cast<uintptr_t>(GetModuleHandle("client.dll"))))
+    {
+        Sleep(50);
+        if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for client.dll"); return; }
+    }
+    waitMs = 0;
+    while (!(m_BaseEngine = reinterpret_cast<uintptr_t>(GetModuleHandle("engine.dll"))))
+    {
+        Sleep(50);
+        if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for engine.dll"); return; }
+    }
+    waitMs = 0;
+    while (!(m_BaseMaterialSystem = reinterpret_cast<uintptr_t>(GetModuleHandle("materialsystem.dll"))))
+    {
+        Sleep(50);
+        if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for materialsystem.dll"); return; }
+    }
+    waitMs = 0;
+    while (!(m_BaseServer = reinterpret_cast<uintptr_t>(GetModuleHandle("server.dll"))))
+    {
+        Sleep(50);
+        if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for server.dll"); return; }
+    }
+    waitMs = 0;
+    while (!(m_BaseVgui2 = reinterpret_cast<uintptr_t>(GetModuleHandle("vgui2.dll"))))
+    {
+        Sleep(50);
+        if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for vgui2.dll"); return; }
+    }
+
+    m_ClientEntityList = reinterpret_cast<IClientEntityList *>(GetInterface("client.dll", "VClientEntityList003"));
+    m_EngineTrace = reinterpret_cast<IEngineTrace *>(GetInterface("engine.dll", "EngineTraceClient004"));
+    m_EngineClient = reinterpret_cast<IEngineClient *>(GetInterface("engine.dll", "VEngineClient015"));
+    m_MaterialSystem = reinterpret_cast<IMaterialSystem *>(GetInterface("materialsystem.dll", "VMaterialSystem080"));
+    m_ClientViewRender = reinterpret_cast<IViewRender *>(GetInterface("client.dll", "VEngineRenderView013"));
+    m_EngineViewRender = reinterpret_cast<IViewRender *>(GetInterface("engine.dll", "VEngineRenderView013"));
+    m_ModelInfo = reinterpret_cast<IModelInfo *>(GetInterface("engine.dll", "VModelInfoClient004"));
+    m_ModelRender = reinterpret_cast<IModelRender *>(GetInterface("engine.dll", "VEngineModel016"));
+    m_VguiInput = reinterpret_cast<IInput *>(GetInterface("vgui2.dll", "VGUI_InputInternal001"));
+    m_VguiSurface = reinterpret_cast<ISurface *>(GetInterface("vguimatsurface.dll", "VGUI_Surface031"));
+    m_EngineSound = reinterpret_cast<IEngineSound *>(GetInterface("engine.dll", "IEngineSound003"));
 
     m_Offsets = new Offsets();
 
     m_ClientMode = **(IClientMode***)(m_Offsets->g_pClientMode.address);
+
+    // Null-check critical interfaces before constructing VR
+    if (!m_EngineClient || !m_MaterialSystem)
+    {
+        errorMsg("Critical engine interfaces missing — VR cannot initialize.");
+        m_Initialized = true;
+        return;
+    }
 
     m_VR = new VR(this);
     m_Hooks = new Hooks(this);
@@ -72,7 +102,13 @@ Game::Game()
 
 void *Game::GetInterface(const char *dllname, const char *interfacename)
 {
-    tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(GetModuleHandle(dllname), "CreateInterface");
+    HMODULE hModule = GetModuleHandle(dllname);
+    if (!hModule)
+        return nullptr;
+
+    auto CreateInterface = reinterpret_cast<tCreateInterface>(GetProcAddress(hModule, "CreateInterface"));
+    if (!CreateInterface)
+        return nullptr;
 
     int returnCode = 0;
     void *createdInterface = CreateInterface(interfacename, &returnCode);
@@ -87,16 +123,16 @@ void Game::errorMsg(const char *msg)
 
 CBaseEntity *Game::GetClientEntity(int entityIndex)
 {
-    return (CBaseEntity *)(m_ClientEntityList->GetClientEntity(entityIndex));
+    return reinterpret_cast<CBaseEntity *>(m_ClientEntityList->GetClientEntity(entityIndex));
 }
 
 char *Game::getNetworkName(uintptr_t *entity)
 {
-    uintptr_t *IClientNetworkableVtable = (uintptr_t *)*(entity + 0x8);
-    uintptr_t *GetClientClassPtr = (uintptr_t *)*(IClientNetworkableVtable + 0x8);
-    uintptr_t *ClientClassPtr = (uintptr_t *)*(GetClientClassPtr + 0x1);
-    char *m_pNetworkName = (char *)*(ClientClassPtr + 0x8);
-    int classID = (int)*(ClientClassPtr + 0x10);
+    auto *IClientNetworkableVtable = reinterpret_cast<uintptr_t *>(*(entity + 0x8));
+    auto *GetClientClassPtr = reinterpret_cast<uintptr_t *>(*(IClientNetworkableVtable + 0x8));
+    auto *ClientClassPtr = reinterpret_cast<uintptr_t *>(*(GetClientClassPtr + 0x1));
+    auto *m_pNetworkName = reinterpret_cast<char *>(*(ClientClassPtr + 0x8));
+    int classID = static_cast<int>(*(ClientClassPtr + 0x10));
     std::cout << "ClassID: " << classID << std::endl;
     return m_pNetworkName;
 }

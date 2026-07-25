@@ -1,6 +1,6 @@
 # Portal 2 VR Mod
 
-**v5.3.0.6** — *"One-Stop Shop"* — **July 24, 2026 17:15 UTC**
+**v5.3.0.7** — *"Loading Skip"* — **July 24, 2026 22:30 UTC**
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Build x86](https://img.shields.io/badge/build-Release%20x86-brightgreen)]()
@@ -14,7 +14,7 @@ Works in **single player** and **co-op** — identical code path, zero extra con
 
 ## Quick Install (2 minutes)
 
-1. **Download** [`Portal2VR_v5.3.0.6.zip`](./Portal2VR_v5.3.0.6.zip)
+1. **Download** [`Portal2VR_v5.3.0.7.zip`](./Portal2VR_v5.3.0.7.zip)
 2. **Extract** all contents into `steamapps\common\Portal 2` (merge folders)
 3. **Launch Portal 2** normally from your Steam library — that's it
 
@@ -45,7 +45,7 @@ Works in **single player** and **co-op** — identical code path, zero extra con
 
 ## What's new in v5.3.0
 
-| Feature | v5.2 (Previous) | v5.3.0 (Current) |
+| Feature | v5.2 (Previous) | v5.3.0.7 (Current) |
 |---|---|---|
 | Launch setup | Required `-insecure -window` + 8 cvars | **Zero config** — auto-detects everything |
 | Window mode | Forced via `-window` flag | Auto-forced by DLL on launch |
@@ -76,6 +76,7 @@ Edit `Portal 2\VR\config.txt` while the game is running — changes apply live.
 | `6DOF` | true | Positional tracking |
 | `AntiAliasing` | 0 | MSAA level |
 | `RenderWindow` | 0 | Desktop mirror window |
+| `SkipLoadingScreen` | true | Auto-skip loading screens and intro videos |
 | `ViewmodelPosCustomOffset` | 0,0,0 | Viewmodel position |
 | `ViewmodelAngCustomOffset` | 0,0,0 | Viewmodel angle |
 
@@ -106,7 +107,7 @@ Portal2VR/
 │   ├── hooks.cpp            Source engine function hooks
 │   ├── hooks.h              Hook declarations
 │   ├── offsets.h            Signature-scanned function offsets
-│   ├── version.rc           DLL metadata (v5.3.0.6)
+│   ├── version.rc           DLL metadata (v5.3.0.7)
 │   ├── config.txt           Live-reloadable settings
 │   ├── manifest.vrmanifest  SteamVR app registration
 │   ├── sounds.h             Sound interface helper
@@ -116,7 +117,7 @@ Portal2VR/
 ├── thirdparty/              MinHook, OpenVR
 ├── archive/v0.2.0/          Original release (reference)
 ├── .github/workflows/       CI (x86 + x64 automated builds)
-├── Portal2VR_v5.3.0.6.zip   Release package
+├── Portal2VR_v5.3.0.7.zip   Release package
 ├── l4d2vr.sln               Visual Studio solution
 ├── GUIDE.md                 Developer deep-dive
 └── README.md                This file
@@ -128,7 +129,8 @@ Portal2VR/
 
 | Version | Date | Notes |
 |---|---|---|
-| **v5.3.0.6** | **2026-07-24 17:15** | **Current.** Auto-launch SteamVR + Portal 2, one-click batch launcher, simplified install |
+| **v5.3.0.7** | **2026-07-24 22:30** | **Current.** Auto-skip loading screens/movies, all C-style casts replaced with C++ casts, consistency fix |
+| v5.3.0.6 | 2026-07-24 17:15 | Auto-launch SteamVR + Portal 2, one-click batch launcher, simplified install |
 | v5.3.0.5 | 2026-07-24 | Dual-arch CI, C++ casts cleanup, x64 link fix, DLL metadata |
 | v5.3.0 | 2026-07-24 | Auto-detect VR, no launch options, auto-windowing, dashboard overlay, 0-error x86/x64 |
 | v5.2 | 2026-07-22 | Dead code cleanup, grabbable physics, perf optimization, 0-error build |
@@ -138,7 +140,7 @@ Portal2VR/
 
 ## Credits
 
-**v5.2 – v5.3.0.6** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — auto-VR, zero-config, left controller, code cleanup, perf, build fixes, dual-arch CI.
+**v5.2 – v5.3.0.7** — [jimgranitex-eng](https://github.com/jimgranitex-eng) — auto-VR, zero-config, left controller, code cleanup, perf, build fixes, dual-arch CI, loading screen skip.
 
 Original mod by [Gistix/portal2vr](https://github.com/Gistix/portal2vr), built on [sd805/l4d2vr](https://github.com/sd805/l4d2vr).
 

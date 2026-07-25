@@ -26,7 +26,7 @@
 	// Hook IEngineSound::EmitSound via vtable
 	if (m_Game->m_EngineSound)
 	{
-		void** vtable = *(void***)m_Game->m_EngineSound;
+		auto** vtable = *reinterpret_cast<void***>(m_Game->m_EngineSound);
 		hkEmitSound.createHook(vtable[2], &dEmitSound);
 		hkEmitSound.enableHook();
 	}
@@ -80,89 +80,89 @@ Hooks::~Hooks()
 
 int Hooks::initSourceHooks()
 {
-	LPVOID pRenderViewVFunc = (LPVOID)(m_Game->m_Offsets->RenderView.address);
+	auto pRenderViewVFunc = reinterpret_cast<LPVOID>(m_Game->m_Offsets->RenderView.address);
 	hkRenderView.createHook(pRenderViewVFunc, &dRenderView);
 
-	LPVOID calcViewModelViewAddr = (LPVOID)(m_Game->m_Offsets->CalcViewModelView.address);
+	auto calcViewModelViewAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->CalcViewModelView.address);
 	hkCalcViewModelView.createHook(calcViewModelViewAddr, &dCalcViewModelView);
 
-	LPVOID ProcessUsercmdsAddr = (LPVOID)(m_Game->m_Offsets->ProcessUsercmds.address);
+	auto ProcessUsercmdsAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->ProcessUsercmds.address);
 	hkProcessUsercmds.createHook(ProcessUsercmdsAddr, &dProcessUsercmds);
 
-	LPVOID ReadUserCmdAddr = (LPVOID)(m_Game->m_Offsets->ReadUserCmd.address);
+	auto ReadUserCmdAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->ReadUserCmd.address);
 	hkReadUsercmd.createHook(ReadUserCmdAddr, &dReadUsercmd);
 
-	LPVOID WriteUsercmdAddr = (LPVOID)(m_Game->m_Offsets->WriteUsercmd.address);
+	auto WriteUsercmdAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->WriteUsercmd.address);
 	hkWriteUsercmd.createHook(WriteUsercmdAddr, &dWriteUsercmd);
 
-	LPVOID EyePositionAddr = (LPVOID)(m_Game->m_Offsets->EyePosition.address);
+	auto EyePositionAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->EyePosition.address);
 	hkEyePosition.createHook(EyePositionAddr, &dEyePosition);
 
-    LPVOID DrawModelExecuteAddr = (LPVOID)(m_Game->m_Offsets->DrawModelExecute.address);
+    auto DrawModelExecuteAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->DrawModelExecute.address);
     hkDrawModelExecute.createHook(DrawModelExecuteAddr, &dDrawModelExecute);
 
-	LPVOID PushRenderTargetAddr = (LPVOID)(m_Game->m_Offsets->PushRenderTargetAndViewport.address);
+	auto PushRenderTargetAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->PushRenderTargetAndViewport.address);
 	hkPushRenderTargetAndViewport.createHook(PushRenderTargetAddr, &dPushRenderTargetAndViewport);
 
-	LPVOID PopRenderTargetAddr = (LPVOID)(m_Game->m_Offsets->PopRenderTargetAndViewport.address);
+	auto PopRenderTargetAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->PopRenderTargetAndViewport.address);
 	hkPopRenderTargetAndViewport.createHook(PopRenderTargetAddr, &dPopRenderTargetAndViewport);
 
-	LPVOID VGui_PaintAddr = (LPVOID)(m_Game->m_Offsets->VGui_Paint.address);
+	auto VGui_PaintAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->VGui_Paint.address);
 	hkVgui_Paint.createHook(VGui_PaintAddr, &dVGui_Paint);
 
-	LPVOID PrePushRenderTargetAddr = (LPVOID)(m_Game->m_Offsets->PrePushRenderTarget.address);
+	auto PrePushRenderTargetAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->PrePushRenderTarget.address);
 	hkPrePushRenderTarget.createHook(PrePushRenderTargetAddr, &dPrePushRenderTarget);
 
-	LPVOID Weapon_ShootPositionAddr = (LPVOID)(m_Game->m_Offsets->Weapon_ShootPosition.address);
+	auto Weapon_ShootPositionAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->Weapon_ShootPosition.address);
 	hkWeapon_ShootPosition.createHook(Weapon_ShootPositionAddr, &dWeapon_ShootPosition);
 	
-	LPVOID TraceFirePortalAddr = (LPVOID)(m_Game->m_Offsets->TraceFirePortalServer.address);
+	auto TraceFirePortalAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->TraceFirePortalServer.address);
 	hkTraceFirePortal.createHook(TraceFirePortalAddr, &dTraceFirePortal);
 
-	LPVOID DrawSelfAddr = (LPVOID)(m_Game->m_Offsets->DrawSelf.address);
+	auto DrawSelfAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->DrawSelf.address);
 	hkDrawSelf.createHook(DrawSelfAddr, &dDrawSelf);
 	
-	LPVOID ClipTransformAddr = (LPVOID)(m_Game->m_Offsets->ClipTransform.address);
+	auto ClipTransformAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->ClipTransform.address);
 	hkClipTransform.createHook(ClipTransformAddr, &dClipTransform);
 
 	// Portalling
-	LPVOID PlayerPortalledAddr = (LPVOID)(m_Game->m_Offsets->PlayerPortalled.address);
+	auto PlayerPortalledAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->PlayerPortalled.address);
 	hkPlayerPortalled.createHook(PlayerPortalledAddr, &dPlayerPortalled);
 
-	UTIL_Portal_FirstAlongRay = (tUTIL_Portal_FirstAlongRay)m_Game->m_Offsets->UTIL_Portal_FirstAlongRay.address;
-	UTIL_IntersectRayWithPortal = (tUTIL_IntersectRayWithPortal)m_Game->m_Offsets->UTIL_IntersectRayWithPortal.address;
-	UTIL_Portal_AngleTransform = (tUTIL_Portal_AngleTransform)m_Game->m_Offsets->UTIL_Portal_AngleTransform.address;
+	UTIL_Portal_FirstAlongRay = reinterpret_cast<tUTIL_Portal_FirstAlongRay>(m_Game->m_Offsets->UTIL_Portal_FirstAlongRay.address);
+	UTIL_IntersectRayWithPortal = reinterpret_cast<tUTIL_IntersectRayWithPortal>(m_Game->m_Offsets->UTIL_IntersectRayWithPortal.address);
+	UTIL_Portal_AngleTransform = reinterpret_cast<tUTIL_Portal_AngleTransform>(m_Game->m_Offsets->UTIL_Portal_AngleTransform.address);
 
-	LPVOID CreateMoveAddr = (LPVOID)(m_Game->m_Offsets->CreateMove.address);
+	auto CreateMoveAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->CreateMove.address);
 	hkCreateMove.createHook(CreateMoveAddr, &dCreateMove);
 
 	// Sound
-	LPVOID S_UpdateListenerAddr = (LPVOID)(m_Game->m_Offsets->S_UpdateListener.address);
+	auto S_UpdateListenerAddr = reinterpret_cast<LPVOID>(m_Game->m_Offsets->S_UpdateListener.address);
 	hkS_UpdateListener.createHook(S_UpdateListenerAddr, &dS_UpdateListener);
 
 	// Grababbles
-	hkComputeError.createHook((LPVOID)(m_Game->m_Offsets->ComputeError.address), &dComputeError);
-	hkUpdateObject.createHook((LPVOID)(m_Game->m_Offsets->UpdateObject.address), &dUpdateObject);
-	hkUpdateObjectVM.createHook((LPVOID)(m_Game->m_Offsets->UpdateObjectVM.address), &dUpdateObjectVM);
-	hkRotateObject.createHook((LPVOID)(m_Game->m_Offsets->RotateObject.address), &dRotateObject);
-	hkEyeAngles.createHook((LPVOID)(m_Game->m_Offsets->EyeAngles.address), &dEyeAngles);
+	hkComputeError.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->ComputeError.address), &dComputeError);
+	hkUpdateObject.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->UpdateObject.address), &dUpdateObject);
+	hkUpdateObjectVM.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->UpdateObjectVM.address), &dUpdateObjectVM);
+	hkRotateObject.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->RotateObject.address), &dRotateObject);
+	hkEyeAngles.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->EyeAngles.address), &dEyeAngles);
 
 	// Portal Gun VFX
-	hkGetDefaultFOV.createHook((LPVOID)(m_Game->m_Offsets->GetDefaultFOV.address), &dGetDefaultFOV);
-	hkGetFOV.createHook((LPVOID)(m_Game->m_Offsets->GetFOV.address), &dGetFOV);
-	hkGetViewModelFOV.createHook((LPVOID)(m_Game->m_Offsets->GetViewModelFOV.address), &dGetViewModelFOV);
+	hkGetDefaultFOV.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->GetDefaultFOV.address), &dGetDefaultFOV);
+	hkGetFOV.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->GetFOV.address), &dGetFOV);
+	hkGetViewModelFOV.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->GetViewModelFOV.address), &dGetViewModelFOV);
 	
 	// Laser Pointer
-	GetPortalPlayer = (tGetPortalPlayer)m_Game->m_Offsets->GetPortalPlayer.address;
-	CreatePingPointer = (tCreatePingPointer)m_Game->m_Offsets->CreatePingPointer.address;
-	PrecacheParticleSystem = (tPrecacheParticleSystem)m_Game->m_Offsets->PrecacheParticleSystem.address;
-	hkPrecache.createHook((LPVOID)(m_Game->m_Offsets->Precache.address), &dPrecache);
-	hkSetDrawOnlyForSplitScreenUser.createHook((LPVOID)m_Game->m_Offsets->SetDrawOnlyForSplitScreenUser.address, &dSetDrawOnlyForSplitScreenUser);
-	hkCHudCrosshair_ShouldDraw.createHook((LPVOID)m_Game->m_Offsets->CHudCrosshair_ShouldDraw.address, &dCHudCrosshair_ShouldDraw);
+	GetPortalPlayer = reinterpret_cast<tGetPortalPlayer>(m_Game->m_Offsets->GetPortalPlayer.address);
+	CreatePingPointer = reinterpret_cast<tCreatePingPointer>(m_Game->m_Offsets->CreatePingPointer.address);
+	PrecacheParticleSystem = reinterpret_cast<tPrecacheParticleSystem>(m_Game->m_Offsets->PrecacheParticleSystem.address);
+	hkPrecache.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->Precache.address), &dPrecache);
+	hkSetDrawOnlyForSplitScreenUser.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->SetDrawOnlyForSplitScreenUser.address), &dSetDrawOnlyForSplitScreenUser);
+	hkCHudCrosshair_ShouldDraw.createHook(reinterpret_cast<LPVOID>(m_Game->m_Offsets->CHudCrosshair_ShouldDraw.address), &dCHudCrosshair_ShouldDraw);
 
 	//
-	EntityIndex = (tEntindex)m_Game->m_Offsets->CBaseEntity_entindex.address;
-	GetOwner = (tGetOwner)m_Game->m_Offsets->GetOwner.address;
+	EntityIndex = reinterpret_cast<tEntindex>(m_Game->m_Offsets->CBaseEntity_entindex.address);
+	GetOwner = reinterpret_cast<tGetOwner>(m_Game->m_Offsets->GetOwner.address);
 	return 1;
 } 
 
@@ -372,7 +372,7 @@ float __fastcall Hooks::dProcessUsercmds(void *ecx, void *edx, edict_t *player, 
 {
 	if (player && player->m_pUnk)
 	{
-		Server_BaseEntity *pPlayer = (Server_BaseEntity*)player->m_pUnk->GetBaseEntity();
+		Server_BaseEntity *pPlayer = reinterpret_cast<Server_BaseEntity*>(player->m_pUnk->GetBaseEntity());
 		int index = EntityIndex(pPlayer);
 		if (index >= 0 && index < (int)m_Game->m_PlayersVRInfo.size())
 			m_Game->m_CurrentUsercmdID = index;
@@ -620,7 +620,7 @@ bool __fastcall Hooks::dTraceFirePortal(void* ecx, void* edx, const Vector& vTra
 
 void __fastcall Hooks::dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3)
 {
-	CBaseEntity* pBaseEntity = (CBaseEntity*)ecx;
+	CBaseEntity* pBaseEntity = reinterpret_cast<CBaseEntity*>(ecx);
 
 	QAngle angAbsRotationBefore;
 	m_Game->m_EngineClient->GetViewAngles(angAbsRotationBefore);

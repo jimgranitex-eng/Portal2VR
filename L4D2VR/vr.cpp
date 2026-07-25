@@ -25,6 +25,7 @@ VR::VR(Game *game)
         m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
         if (error != vr::VRInitError_None)
         {
+            std::cout << "Portal2VR: SteamVR not available (error " << (int)error << ") — running in flatscreen mode" << std::endl;
             m_IsInitialized = false;
             m_IsVREnabled = false;
             return;
@@ -32,6 +33,7 @@ VR::VR(Game *game)
 
         if (!vr::VRCompositor())
         {
+            std::cout << "Portal2VR: VR Compositor unavailable — running in flatscreen mode" << std::endl;
             m_IsInitialized = false;
             m_IsVREnabled = false;
             return;
@@ -45,7 +47,17 @@ VR::VR(Game *game)
     }
 
     m_Input = vr::VRInput();
-    m_System = vr::OpenVRInternal_ModuleContext().VRSystem();
+    if (!m_Input)
+    {
+        m_IsInitialized = false;
+        m_IsVREnabled = false;
+        return;
+    }
+
+    auto *systemFromContext = vr::OpenVRInternal_ModuleContext().VRSystem();
+    if (systemFromContext)
+        m_System = systemFromContext;
+    // else: keep m_System from VR_Init (line 25)
 
     m_System->GetRecommendedRenderTargetSize(&m_RenderWidth, &m_RenderHeight);
 
@@ -77,11 +89,29 @@ VR::VR(Game *game)
     std::thread configParser(&VR::WaitForConfigUpdate, this);
     configParser.detach();
 
+    int d3dWaitMs = 0;
     while (!g_D3DVR9) 
+    {
         Sleep(10);
+        d3dWaitMs += 10;
+        if (d3dWaitMs > 30000)
+        {
+            std::cerr << "Portal2VR: Timed out waiting for D3D9 VR bridge (30s)" << std::endl;
+            m_IsInitialized = false;
+            m_IsVREnabled = false;
+            return;
+        }
+    }
 
     g_D3DVR9->GetBackBufferData(&m_VKBackBuffer);
     m_Overlay = vr::VROverlay();
+
+    if (!m_Overlay)
+    {
+        m_IsInitialized = false;
+        m_IsVREnabled = false;
+        return;
+    }
 
     // Dashboard overlay — visible in SteamVR environment/dashboard
     m_Overlay->CreateDashboardOverlay("Portal2VR_Dashboard", "Portal 2 VR",
@@ -119,6 +149,7 @@ VR::VR(Game *game)
 
     m_IsInitialized = true;
     m_IsVREnabled = true;
+    m_LastSkipTime = std::chrono::steady_clock::now();
 }
 
 VR::~VR()
@@ -135,6 +166,8 @@ void VR::Shutdown()
     {
         if (m_LoadingScreenHandle != vr::k_ulOverlayHandleInvalid)
             m_Overlay->DestroyOverlay(m_LoadingScreenHandle);
+        if (m_MainMenuHandle != vr::k_ulOverlayHandleInvalid)
+            m_Overlay->DestroyOverlay(m_MainMenuHandle);
         if (m_DashboardHandle != vr::k_ulOverlayHandleInvalid)
             m_Overlay->DestroyOverlay(m_DashboardHandle);
     }
@@ -217,6 +250,36 @@ void VR::Update()
     if (m_IsVREnabled && g_D3DVR9)
     {
         bool inGame = m_Game->m_EngineClient->IsInGame();
+        bool cursorVisible = m_Game->m_VguiSurface->IsCursorVisible();
+
+        // Skip loading screen: detect when NOT in game and NOT at a menu (i.e. loading/movie)
+        if (m_SkipLoadingScreen)
+        {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_LastSkipTime).count();
+
+            if (!inGame && !cursorVisible)
+            {
+                // Show loading overlay during loading
+                if (m_LoadingScreenHandle != vr::k_ulOverlayHandleInvalid)
+                    m_Overlay->ShowOverlay(m_LoadingScreenHandle);
+
+                // Send skip command every 500ms to skip videos/splash screens
+                if (elapsed > 500)
+                {
+                    m_Game->ClientCmd_Unrestricted("skip");
+                    m_LastSkipTime = now;
+                }
+            }
+            else
+            {
+                // Hide loading overlay once back in game or at menu
+                if (m_LoadingScreenHandle != vr::k_ulOverlayHandleInvalid)
+                    m_Overlay->HideOverlay(m_LoadingScreenHandle);
+            }
+
+            m_LastInGameState = inGame;
+        }
 
         // Prevents crashing at menu
         if (!inGame)
@@ -228,16 +291,16 @@ void VR::Update()
             m_Game->m_CachedArmsModel = false;
             m_CreatedVRTextures = false; // Have to recreate textures otherwise some workshop maps won't render
         } 
-    }
 
-    SubmitVRTextures();
-    UpdatePosesAndActions();
-    UpdateTracking();
+        SubmitVRTextures();
+        UpdatePosesAndActions();
+        UpdateTracking();
 
-    if (m_Game->m_VguiSurface->IsCursorVisible()) {
-        ProcessMenuInput();
-    } else {
-        ProcessInput();
+        if (m_Game->m_VguiSurface->IsCursorVisible()) {
+            ProcessMenuInput();
+        } else {
+            ProcessInput();
+        }
     }
 }
 
@@ -1046,7 +1109,7 @@ Vector VR::Trace(uint32_t* localPlayer) {
 
     CGameTrace trace;
     Ray_t ray;
-    CTraceFilterSkipNPCsAndPlayers tracefilter((IHandleEntity*)localPlayer, 0);
+    CTraceFilterSkipNPCsAndPlayers tracefilter(reinterpret_cast<IHandleEntity*>(localPlayer), 0);
 
     ray.Init(vecStart, vecEnd);
 
@@ -1202,13 +1265,13 @@ QAngle TransformAnglesToWorldSpace(const QAngle& angles, const matrix3x4_t& pare
 Vector VR::TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAngle& eyeAngle) {
     CGameTrace trTestObstructionsNearPortals;
     Ray_t ray;
-    CTraceFilterSkipNPCsAndPlayers tracefilter((IHandleEntity*)localPlayer, 0);
+    CTraceFilterSkipNPCsAndPlayers tracefilter(reinterpret_cast<IHandleEntity*>(localPlayer), 0);
 
     ray.Init(cameraPos, eyePos);
     m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT | MASK_SHOT_HULL, &tracefilter, &trTestObstructionsNearPortals);
 
     float flWallHitFraction = trTestObstructionsNearPortals.fraction + 0.01f;
-    CPortal_Base2D* pPortal = (CPortal_Base2D*)m_Game->m_Hooks->UTIL_Portal_FirstAlongRay(ray, flWallHitFraction);
+    auto* pPortal = reinterpret_cast<CPortal_Base2D*>(m_Game->m_Hooks->UTIL_Portal_FirstAlongRay(ray, flWallHitFraction));
 
     if (trTestObstructionsNearPortals.DidHit() && pPortal) {
         float flRayHitFraction = m_Game->m_Hooks->UTIL_IntersectRayWithPortal(ray, pPortal);
@@ -1345,6 +1408,7 @@ void VR::ParseConfigFile()
     parseOrDefault("AimMode", m_AimMode, 2);
     parseOrDefault("AntiAliasing", m_AntiAliasing, 0);
     parseOrDefault("RenderWindow", m_RenderWindow, 0);
+    parseOrDefault("SkipLoadingScreen", m_SkipLoadingScreen, true);
     parseXYZOrDefaultZero("ViewmodelPosCustomOffset", m_ViewmodelPosCustomOffset);
     parseXYZOrDefaultZero("ViewmodelAngCustomOffset", m_ViewmodelAngCustomOffset);
 }
@@ -1365,7 +1429,8 @@ void VR::WaitForConfigUpdate()
             if (configModifiedTime != configLastModified)
             {
                 configLastModified = configModifiedTime;
-                ParseConfigFile();
+                if (m_Game) // Re-check after potentially long file operation
+                    ParseConfigFile();
                 
                 std::cout << "Successfully reloaded 'config.txt'\n";
             }

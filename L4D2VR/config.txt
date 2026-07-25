@@ -1,4 +1,4 @@
-# Portal 2 VR Mod v5.3.0 (2026-07-24)
+# Portal 2 VR Mod v5.3.0.7 (2026-07-24)
 # Auto-detect VR — no launch options needed
 #
 # Edit this file to change settings. Changes apply live while the game is running.
@@ -13,6 +13,7 @@ IPDScale=1.0 # Scale of interpupillary distance
 AimMode=2 # 0 = None, 1 = Crosshair (legacy), 2 = Laser sight/beam
 AntiAliasing=0 # 0, 2, 4 8
 RenderWindow=0 # Whether or not to render the game a third time for the window, yes you heard it right, so use this wisely
+SkipLoadingScreen=true # Auto-skip loading screens and intro videos
 ViewmodelPosCustomOffsetX=0.0
 ViewmodelPosCustomOffsetY=0.0
 ViewmodelPosCustomOffsetZ=0.0

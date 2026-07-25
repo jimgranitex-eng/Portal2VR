@@ -196,6 +196,10 @@ public:
 	bool m_HudAlwaysVisible = false;
 	int m_AimMode = 2;
 
+	bool m_SkipLoadingScreen = true;
+	bool m_LastInGameState = false;
+	std::chrono::steady_clock::time_point m_LastSkipTime;
+
 	VR() {};
 	VR(Game *game);
 	~VR();

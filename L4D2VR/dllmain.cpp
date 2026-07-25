@@ -7,8 +7,8 @@
 #include "sdk.h"
 
 #define VER_PRODUCT "Portal 2 VR Mod"
-#define VER_VERSION "5.3.0.6"
-#define VER_DATE    "2026-07-24T17:15:00Z"
+#define VER_VERSION "5.3.0.7"
+#define VER_DATE    "2026-07-24T22:30:00Z"
 
 static bool g_WindowPatched = false;
 static HWINEVENTHOOK g_WinEventHook = nullptr;
@@ -77,7 +77,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
             DisableThreadLibraryCalls(hModule);
-            CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)InitL4D2VR, hModule, 0, NULL);
+            CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitL4D2VR), hModule, 0, NULL);
             break;
     case DLL_PROCESS_DETACH:
         if (g_WinEventHook)
