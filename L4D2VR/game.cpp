@@ -1,6 +1,7 @@
 #include "game.h"
 #include <Windows.h>
 #include <iostream>
+#include <fstream>
 #include "sdk.h"
 #include "sounds.h"
 #include "vr.h"
@@ -32,8 +33,26 @@ static DWORD WINAPI AutoExecThread(LPVOID param)
     return 0;
 }
 
+static void VRLog(const char* msg)
+{
+    char dir[MAX_STR_LEN];
+    GetCurrentDirectory(MAX_STR_LEN, dir);
+    char path[MAX_STR_LEN];
+    sprintf_s(path, "%s\\VR\\portal2vr.log", dir);
+    std::ofstream logFile(path, std::ios::app);
+    if (logFile.is_open())
+    {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        logFile << "[" << st.wHour << ":" << st.wMinute << ":" << st.wSecond
+            << "." << st.wMilliseconds << "] [Game] " << msg << "\n";
+    }
+}
+
 Game::Game()
 {
+    VRLog("Game constructor start");
+
     const int kMaxWaitMs = 60000; // 60 second timeout for DLL loading
     int waitMs = 0;
 
@@ -43,18 +62,21 @@ Game::Game()
         if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for client.dll"); return; }
     }
     waitMs = 0;
+    VRLog("client.dll loaded");
     while (!(m_BaseEngine = reinterpret_cast<uintptr_t>(GetModuleHandle("engine.dll"))))
     {
         Sleep(50);
         if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for engine.dll"); return; }
     }
     waitMs = 0;
+    VRLog("engine.dll loaded");
     while (!(m_BaseMaterialSystem = reinterpret_cast<uintptr_t>(GetModuleHandle("materialsystem.dll"))))
     {
         Sleep(50);
         if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for materialsystem.dll"); return; }
     }
     waitMs = 0;
+    VRLog("materialsystem.dll loaded");
     while (!(m_BaseServer = reinterpret_cast<uintptr_t>(GetModuleHandle("server.dll"))))
     {
         Sleep(50);
@@ -66,6 +88,7 @@ Game::Game()
         Sleep(50);
         if ((waitMs += 50) > kMaxWaitMs) { errorMsg("Timed out waiting for vgui2.dll"); return; }
     }
+    VRLog("All DLLs loaded");
 
     m_ClientEntityList = reinterpret_cast<IClientEntityList *>(GetInterface("client.dll", "VClientEntityList003"));
     m_EngineTrace = reinterpret_cast<IEngineTrace *>(GetInterface("engine.dll", "EngineTraceClient004"));
@@ -78,23 +101,19 @@ Game::Game()
     m_VguiInput = reinterpret_cast<IInput *>(GetInterface("vgui2.dll", "VGUI_InputInternal001"));
     m_VguiSurface = reinterpret_cast<ISurface *>(GetInterface("vguimatsurface.dll", "VGUI_Surface031"));
     m_EngineSound = reinterpret_cast<IEngineSound *>(GetInterface("engine.dll", "IEngineSound003"));
+    VRLog("Interfaces obtained");
 
     m_Offsets = new Offsets();
 
     m_ClientMode = **(IClientMode***)(m_Offsets->g_pClientMode.address);
 
-    // Null-check critical interfaces before constructing VR
-    if (!m_EngineClient || !m_MaterialSystem)
-    {
-        errorMsg("Critical engine interfaces missing — VR cannot initialize.");
-        m_Initialized = false;
-        return;
-    }
-
+    VRLog("Creating VR...");
     m_VR = new VR(this);
+    VRLog("Creating Hooks...");
     m_Hooks = new Hooks(this);
 
     m_Initialized = true;
+    VRLog("Game constructor complete: m_Initialized=1");
 
     // Auto-apply optimal settings — no launch options needed
     CreateThread(NULL, 0, AutoExecThread, this, 0, NULL);

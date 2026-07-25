@@ -15,51 +15,59 @@
 #include <algorithm>
 #include <d3d9_vr.h>
 
+static void VRLog(const char* msg)
+{
+    char dir[MAX_STR_LEN];
+    GetCurrentDirectory(MAX_STR_LEN, dir);
+    char path[MAX_STR_LEN];
+    sprintf_s(path, "%s\\VR\\portal2vr.log", dir);
+    std::ofstream log(path, std::ios::app);
+    if (log.is_open())
+    {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        log << "[" << st.wHour << ":" << st.wMinute << ":" << st.wSecond
+            << "." << st.wMilliseconds << "] " << msg << "\n";
+    }
+}
+
 VR::VR(Game *game) 
 {
     m_Game = game;
 
-    try
-    {
-        vr::HmdError error = vr::VRInitError_None;
-        m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
-        if (error != vr::VRInitError_None)
-        {
-            std::cout << "Portal2VR: SteamVR not available (error " << static_cast<int>(error) << ") — running in flatscreen mode" << std::endl;
-            m_IsInitialized = false;
-            m_IsVREnabled = false;
-            return;
-        }
+    VRLog("=== VR constructor start ===");
 
-        if (!vr::VRCompositor())
-        {
-            std::cout << "Portal2VR: VR Compositor unavailable — running in flatscreen mode" << std::endl;
-            m_IsInitialized = false;
-            m_IsVREnabled = false;
-            return;
-        }
-    }
-    catch (...)
+    char errorString[MAX_STR_LEN];
+
+    vr::HmdError error = vr::VRInitError_None;
+    m_System = vr::VR_Init(&error, vr::VRApplication_Scene);
+
+    if (error != vr::VRInitError_None) 
     {
-        m_IsInitialized = false;
-        m_IsVREnabled = false;
+        snprintf(errorString, MAX_STR_LEN, "VR_Init failed: %s", vr::VR_GetVRInitErrorAsEnglishDescription(error));
+        VRLog(errorString);
+        Game::errorMsg(errorString);
         return;
     }
+    VRLog("VR_Init OK");
+
+    vr::EVRInitError peError = vr::VRInitError_None;
+
+    if (!vr::VRCompositor())
+    {
+        VRLog("Compositor initialization failed.");
+        Game::errorMsg("Compositor initialization failed.");
+        return;
+    }
+    VRLog("VRCompositor OK");
 
     m_Input = vr::VRInput();
-    if (!m_Input)
-    {
-        m_IsInitialized = false;
-        m_IsVREnabled = false;
-        return;
-    }
-
-    auto *systemFromContext = vr::OpenVRInternal_ModuleContext().VRSystem();
-    if (systemFromContext)
-        m_System = systemFromContext;
-    // else: keep m_System from VR_Init (line 25)
+    m_System = vr::OpenVRInternal_ModuleContext().VRSystem();
+    VRLog("VRInput + VRSystem obtained");
 
     m_System->GetRecommendedRenderTargetSize(&m_RenderWidth, &m_RenderHeight);
+    m_AntiAliasing = 0;
+    VRLog("Render target size obtained");
 
     float l_left = 0.0f, l_right = 0.0f, l_top = 0.0f, l_bottom = 0.0f;
     m_System->GetProjectionRaw(vr::EVREye::Eye_Left, &l_left, &l_right, &l_top, &l_bottom);
@@ -68,6 +76,7 @@ VR::VR(Game *game)
     m_System->GetProjectionRaw(vr::EVREye::Eye_Right, &r_left, &r_right, &r_top, &r_bottom);
 
     float tanHalfFov[2];
+
     tanHalfFov[0] = std::max({ -l_left, l_right, -r_left, r_right });
     tanHalfFov[1] = std::max({ -l_top, l_bottom, -r_top, r_bottom });
 
@@ -84,72 +93,45 @@ VR::VR(Game *game)
     m_Fov = 2.0f * atan(tanHalfFov[0]) * 360 / (3.14159265358979323846 * 2);
 
     InstallApplicationManifest("manifest.vrmanifest");
+    VRLog("Application manifest installed");
+
     SetActionManifest("action_manifest.json");
+    VRLog("Action manifest installed");
 
     std::thread configParser(&VR::WaitForConfigUpdate, this);
     configParser.detach();
 
-    int d3dWaitMs = 0;
+    VRLog("Waiting for g_D3DVR9...");
     while (!g_D3DVR9) 
-    {
         Sleep(10);
-        d3dWaitMs += 10;
-        if (d3dWaitMs > 30000)
-        {
-            std::cerr << "Portal2VR: Timed out waiting for D3D9 VR bridge (30s)" << std::endl;
-            m_IsInitialized = false;
-            m_IsVREnabled = false;
-            return;
-        }
-    }
+    VRLog("g_D3DVR9 ready");
 
     g_D3DVR9->GetBackBufferData(&m_VKBackBuffer);
+    VRLog("Back buffer data obtained");
+
     m_Overlay = vr::VROverlay();
+    VRLog("VROverlay obtained");
 
-    if (!m_Overlay)
-    {
-        m_IsInitialized = false;
-        m_IsVREnabled = false;
-        return;
-    }
-
-    // Dashboard overlay — visible in SteamVR environment/dashboard
-    m_Overlay->CreateDashboardOverlay("Portal2VR_Dashboard", "Portal 2 VR",
-        &m_DashboardHandle, &m_MainMenuHandle);
-
-    // Loading screen overlay — shown in the VR void/grid while loading
-    m_Overlay->CreateOverlay("Portal2VR_LoadingScreen", "Portal 2 VR Loading", &m_LoadingScreenHandle);
-    m_Overlay->SetOverlayWidthInMeters(m_LoadingScreenHandle, 3.0f);
-    vr::HmdMatrix34_t identity = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 1.5f,
-        0.0f, 0.0f, 1.0f, -3.0f
-    };
-    m_Overlay->SetOverlayTransformTrackedDeviceRelative(m_LoadingScreenHandle, vr::k_unTrackedDeviceIndex_Hmd, &identity);
-    m_Overlay->ShowOverlay(m_LoadingScreenHandle);
-    m_Overlay->SetOverlayFlag(m_LoadingScreenHandle, vr::VROverlayFlags_NoDashboardTab, true);
-    m_Overlay->SetOverlayFlag(m_LoadingScreenHandle, vr::VROverlayFlags_SortWithNonSceneOverlays, true);
+    m_Overlay->CreateOverlay("MenuOverlayKey", "MenuOverlay", &m_MainMenuHandle);
+    VRLog("Overlay created");
 
     m_Overlay->SetOverlayInputMethod(m_MainMenuHandle, vr::VROverlayInputMethod_Mouse);
     m_Overlay->SetOverlayFlag(m_MainMenuHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
 
-    int windowWidth{}, windowHeight{};
-    auto* ctx = m_Game->m_MaterialSystem->GetRenderContext();
-    ctx->GetWindowSize(windowWidth, windowHeight);
-    ctx->Release();
+    int windowWidth, windowHeight;
+    m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
 
-    const vr::HmdVector2_t mouseScaleMenu = {static_cast<float>(m_RenderWidth), static_cast<float>(m_RenderHeight)};
+    const vr::HmdVector2_t mouseScaleMenu = {m_RenderWidth, m_RenderHeight};
     m_Overlay->SetOverlayCurvature(m_MainMenuHandle, 0.15f);
     m_Overlay->SetOverlayMouseScale(m_MainMenuHandle, &mouseScaleMenu);
-
-    // Hide the loading overlay once initialization is complete
-    m_Overlay->HideOverlay(m_LoadingScreenHandle);
+    VRLog("Overlay configured");
 
     UpdatePosesAndActions();
+    VRLog("Poses and actions updated");
 
     m_IsInitialized = true;
     m_IsVREnabled = true;
-    m_LastSkipTime = std::chrono::steady_clock::now();
+    VRLog("=== VR constructor complete: m_IsInitialized=1, m_IsVREnabled=1 ===");
 }
 
 VR::~VR()
