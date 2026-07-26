@@ -1,6 +1,6 @@
 # Portal 2 VR Mod
 
-**v5.3.0.8** — *"Loader Lock Fix"* — **July 25, 2026**
+**v5.3.0.9** — *"Thread Safety & Code Quality"* — **July 26, 2026**
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Build x86](https://img.shields.io/badge/build-Release%20x86-brightgreen)]()
@@ -109,14 +109,18 @@ Supported controllers: **Oculus Touch**, **Valve Index (Knuckles)**, **Vive Cosm
 
 ---
 
-## What's New in v5.3.0.8
+## What's New in v5.3.0.9
 
-| Feature | v5.3.0.7 (Previous) | v5.3.0.8 (Current) |
+| Feature | v5.3.0.8 (Previous) | v5.3.0.9 (Current) |
 |---|---|---|
-| DllMain | VRLog called inside DllMain (loader lock) | **VRLog removed from DllMain** — no CRT in loader lock |
-| DLL loading | Windows silently unloaded our DLL | **DLL stays loaded** — VR init now runs |
-| VR activation | Flatscreen only, no VR | **VR activates** — headset rendering works |
-| Log file | Never created (DLL unloaded) | **Log file created** in `Portal 2\VR\portal2vr.log` |
+| Logging | 3 copies of VRLog in separate .cpp files | **Single shared VRLog class** in `log.h`/`log.cpp` with mutex safety |
+| Thread safety | Config reload thread races with game thread (UB) | **`std::mutex`** protects config-sensitive members |
+| Memory leaks | `m_Offsets`, `m_VR`, `m_Hooks` never deleted | **`Game` destructor** cleans up all allocations |
+| DllMain safety | `CreateThread` in DllMain (deadlock risk) | **`QueueUserAPC`** — no thread creation in loader lock |
+| Interface validation | Silent null returns from `GetInterface` | **Logged warnings** for missing interfaces, fatal errors for critical ones |
+| Render context leaks | Manual `Release()` calls, leak on early return | **`ScopedRenderContext` RAII wrapper** auto-releases |
+| Dead code | `dGetPrimaryAttackActivity` defined but unused | **Removed** |
+| Version metadata | `version.rc` at v5.3.0.7 | **Updated to v5.3.0.9** |
 
 ---
 

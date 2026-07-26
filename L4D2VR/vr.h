@@ -2,8 +2,23 @@
 #include "openvr.h"
 #include "vector.h"
 #include <chrono>
+#include <mutex>
 
 #define MAX_STR_LEN 256
+
+// RAII wrapper for IMatRenderContext — ensures Release() is called even on early return / exception
+class ScopedRenderContext
+{
+public:
+    ScopedRenderContext(IMatRenderContext* ctx) : m_Ctx(ctx) {}
+    ~ScopedRenderContext() { if (m_Ctx) m_Ctx->Release(); }
+    IMatRenderContext* Get() const { return m_Ctx; }
+    IMatRenderContext* operator->() const { return m_Ctx; }
+    ScopedRenderContext(const ScopedRenderContext&) = delete;
+    ScopedRenderContext& operator=(const ScopedRenderContext&) = delete;
+private:
+    IMatRenderContext* m_Ctx;
+};
 
 class Game;
 class IDirect3DTexture9;
@@ -199,6 +214,9 @@ public:
 	bool m_SkipLoadingScreen = true;
 	bool m_LastInGameState = false;
 	std::chrono::steady_clock::time_point m_LastSkipTime;
+
+	// Thread safety: protects config-sensitive members from data races with the config reload thread
+	mutable std::mutex m_ConfigMutex;
 
 	VR() {};
 	VR(Game *game);

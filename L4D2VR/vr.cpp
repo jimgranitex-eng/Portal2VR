@@ -4,6 +4,7 @@
 #include "game.h"
 #include "hooks.h"
 #include "trace.h"
+#include "log.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -15,29 +16,11 @@
 #include <algorithm>
 #include <d3d9_vr.h>
 
-static void VRLog(const char* msg)
-{
-    char exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, MAX_PATH);
-    char* lastSlash = strrchr(exePath, '\\');
-    if (lastSlash) *lastSlash = '\0';
-    char path[MAX_PATH];
-    sprintf_s(path, "%s\\VR\\portal2vr.log", exePath);
-    std::ofstream log(path, std::ios::app);
-    if (log.is_open())
-    {
-        SYSTEMTIME st;
-        GetLocalTime(&st);
-        log << "[" << st.wHour << ":" << st.wMinute << ":" << st.wSecond
-            << "." << st.wMilliseconds << "] " << msg << "\n";
-    }
-}
-
 VR::VR(Game *game) 
 {
     m_Game = game;
 
-    VRLog("=== VR constructor start ===");
+    VRLog::Write("=== VR constructor start ===");
 
     char errorString[MAX_STR_LEN];
 
@@ -47,29 +30,29 @@ VR::VR(Game *game)
     if (error != vr::VRInitError_None) 
     {
         snprintf(errorString, MAX_STR_LEN, "VR_Init failed: %s", vr::VR_GetVRInitErrorAsEnglishDescription(error));
-        VRLog(errorString);
+        VRLog::Write(errorString);
         Game::errorMsg(errorString);
         return;
     }
-    VRLog("VR_Init OK");
+    VRLog::Write("VR_Init OK");
 
     vr::EVRInitError peError = vr::VRInitError_None;
 
     if (!vr::VRCompositor())
     {
-        VRLog("Compositor initialization failed.");
+        VRLog::Write("Compositor initialization failed.");
         Game::errorMsg("Compositor initialization failed.");
         return;
     }
-    VRLog("VRCompositor OK");
+    VRLog::Write("VRCompositor OK");
 
     m_Input = vr::VRInput();
     m_System = vr::OpenVRInternal_ModuleContext().VRSystem();
-    VRLog("VRInput + VRSystem obtained");
+    VRLog::Write("VRInput + VRSystem obtained");
 
     m_System->GetRecommendedRenderTargetSize(&m_RenderWidth, &m_RenderHeight);
     m_AntiAliasing = 0;
-    VRLog("Render target size obtained");
+    VRLog::Write("Render target size obtained");
 
     float l_left = 0.0f, l_right = 0.0f, l_top = 0.0f, l_bottom = 0.0f;
     m_System->GetProjectionRaw(vr::EVREye::Eye_Left, &l_left, &l_right, &l_top, &l_bottom);
@@ -95,27 +78,27 @@ VR::VR(Game *game)
     m_Fov = 2.0f * atan(tanHalfFov[0]) * 360 / (3.14159265358979323846 * 2);
 
     InstallApplicationManifest("manifest.vrmanifest");
-    VRLog("Application manifest installed");
+    VRLog::Write("Application manifest installed");
 
     SetActionManifest("action_manifest.json");
-    VRLog("Action manifest installed");
+    VRLog::Write("Action manifest installed");
 
     std::thread configParser(&VR::WaitForConfigUpdate, this);
     configParser.detach();
 
-    VRLog("Waiting for g_D3DVR9...");
+    VRLog::Write("Waiting for g_D3DVR9...");
     while (!g_D3DVR9) 
         Sleep(10);
-    VRLog("g_D3DVR9 ready");
+    VRLog::Write("g_D3DVR9 ready");
 
     g_D3DVR9->GetBackBufferData(&m_VKBackBuffer);
-    VRLog("Back buffer data obtained");
+    VRLog::Write("Back buffer data obtained");
 
     m_Overlay = vr::VROverlay();
-    VRLog("VROverlay obtained");
+    VRLog::Write("VROverlay obtained");
 
     m_Overlay->CreateOverlay("MenuOverlayKey", "MenuOverlay", &m_MainMenuHandle);
-    VRLog("Overlay created");
+    VRLog::Write("Overlay created");
 
     m_Overlay->SetOverlayInputMethod(m_MainMenuHandle, vr::VROverlayInputMethod_Mouse);
     m_Overlay->SetOverlayFlag(m_MainMenuHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
@@ -126,14 +109,14 @@ VR::VR(Game *game)
     const vr::HmdVector2_t mouseScaleMenu = {m_RenderWidth, m_RenderHeight};
     m_Overlay->SetOverlayCurvature(m_MainMenuHandle, 0.15f);
     m_Overlay->SetOverlayMouseScale(m_MainMenuHandle, &mouseScaleMenu);
-    VRLog("Overlay configured");
+    VRLog::Write("Overlay configured");
 
     UpdatePosesAndActions();
-    VRLog("Poses and actions updated");
+    VRLog::Write("Poses and actions updated");
 
     m_IsInitialized = true;
     m_IsVREnabled = true;
-    VRLog("=== VR constructor complete: m_IsInitialized=1, m_IsVREnabled=1 ===");
+    VRLog::Write("=== VR constructor complete: m_IsInitialized=1, m_IsVREnabled=1 ===");
 }
 
 VR::~VR()
@@ -229,8 +212,6 @@ void VR::SetScreenSizeOverride(bool bState) {
         int iOldWidth, iOldHeight;
         m_Game->m_VguiSurface->GetScreenSize(iOldWidth, iOldHeight);
         m_Game->m_VguiSurface->ForceScreenSizeOverride(bState, m_RenderWidth, m_RenderHeight);
-        if (bState) {
-        }
 
         m_Game->m_VguiSurface->OnScreenSizeChanged(iOldWidth, iOldHeight);
     }
@@ -371,10 +352,6 @@ bounds.uMax = static_cast<float>(windowWidth) / m_RenderWidth;
         return;
     }
     vr::VROverlay()->HideOverlay(m_MainMenuHandle);
-
-    if (m_Game->m_VguiSurface->IsCursorVisible())
-    {
-    }
 
     vr::VRCompositor()->Submit(vr::Eye_Left, &m_VKLeftEye.m_VRTexture, &(m_TextureBounds)[0], vr::Submit_Default);
     vr::VRCompositor()->Submit(vr::Eye_Right, &m_VKRightEye.m_VRTexture, &(m_TextureBounds)[1], vr::Submit_Default);
@@ -667,6 +644,9 @@ void VR::ProcessInput()
 {
     if (!m_IsVREnabled)
         return;
+
+    // Lock config-sensitive values against the config-reload thread
+    std::lock_guard<std::mutex> lock(m_ConfigMutex);
 
     typedef std::chrono::duration<float, std::milli> duration;
     auto currentTime = std::chrono::steady_clock::now();
@@ -1109,7 +1089,9 @@ Vector VR::Trace(uint32_t* localPlayer) {
 
     ray.Init(vecStart, vecEnd);
 
-    m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT | MASK_SHOT_HULL, &tracefilter, &trace);
+    if (m_Game && m_Game->m_EngineTrace) {
+        m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT | MASK_SHOT_HULL, &tracefilter, &trace);
+    }
 
     return trace.endpos;
 }
@@ -1267,7 +1249,10 @@ Vector VR::TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAng
     m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT | MASK_SHOT_HULL, &tracefilter, &trTestObstructionsNearPortals);
 
     float flWallHitFraction = trTestObstructionsNearPortals.fraction + 0.01f;
-    auto* pPortal = reinterpret_cast<CPortal_Base2D*>(m_Game->m_Hooks->UTIL_Portal_FirstAlongRay(ray, flWallHitFraction));
+    auto* pPortal = nullptr;
+    if (m_Game && m_Game->m_Hooks) {
+        pPortal = reinterpret_cast<CPortal_Base2D*>(m_Game->m_Hooks->UTIL_Portal_FirstAlongRay(ray, flWallHitFraction));
+    }
 
     if (trTestObstructionsNearPortals.DidHit() && pPortal) {
         float flRayHitFraction = m_Game->m_Hooks->UTIL_IntersectRayWithPortal(ray, pPortal);
@@ -1275,7 +1260,7 @@ Vector VR::TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAng
         Vector vHitPoint = ray.m_Start + ray.m_Delta * flRayHitFraction;
         //vNewEye = m_Game->m_Hooks->UTIL_Portal_PointTransform(pPortal->MatrixThisToLinked(), vHitPoint, vNewEye);
 
-        //VMatrix matrix = *(VMatrix*)((uintptr_t)pPortal + 0x4C4);
+        // Use signature scanning for portal matrix instead of hardcoded offset
         VMatrix matrix = pPortal->MatrixThisToLinked();
 
    
@@ -1291,23 +1276,11 @@ Vector VR::TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAng
     return eyePos;
 }
 
-// [CONFIG PARSING UTILITY FUNCTION]
-// Generates an error message by stringifying and concatenating 'args...'.
-template <typename... Ts>
-static void concatErrorMsg(Game& game, const Ts&... args)
-{
-    std::ostringstream oss;
-    (oss << ... << args);
-    game.errorMsg(oss.str().c_str());
-}
-
-// [CONFIG PARSING UTILITY FUNCTION]
 // Attempts to parse an entry with key 'key' from the provided 'userConfig'. If the key is
-// missing or if the parsing fails, 'defaultValue' is returned and an error message is
-// generated.
+// missing or if the parsing fails, 'defaultValue' is returned and the error is logged.
 template <typename T>
 static T parseConfigEntry(
-    const std::unordered_map<std::string, std::string>& userConfig, Game& game,
+    const std::unordered_map<std::string, std::string>& userConfig,
     const char* key, const T& defaultValue)
 try
 {
@@ -1315,9 +1288,8 @@ try
 
     if (itr == userConfig.end())
     {
-        concatErrorMsg(game, "Config entry with key '", key,
-            "' missing -- reverting to default value of '", defaultValue, "'");
-
+        VRLog::Write(std::string("Config '") + key + "' missing -- using default '" +
+            std::to_string(defaultValue) + "'");
         return defaultValue;
     }
 
@@ -1344,14 +1316,14 @@ try
 }
 catch (const std::logic_error& e)
 {
-    concatErrorMsg(game, "Error parsing config entry with key '", key,
-        "' -- reverting to default value of '", defaultValue, "' -- error: (", e.what(), ")");
-
+    VRLog::Write(std::string("Config parse error for key '") + key + "': " + e.what());
     throw;
 }
 
 void VR::ParseConfigFile()
 {
+    std::lock_guard<std::mutex> lock(m_ConfigMutex);
+
     std::ifstream configStream("VR\\config.txt");
     std::unordered_map<std::string, std::string> userConfig;
 
@@ -1379,7 +1351,7 @@ void VR::ParseConfigFile()
     const auto parseOrDefault = [&](const char* key, auto& target,
                                     const auto& defaultValue) 
     { 
-        target = parseConfigEntry(userConfig, *m_Game, key, defaultValue);
+        target = parseConfigEntry(userConfig, key, defaultValue);
         std::cout << "Setting '" << key << "' to '" << target << "'\n";
     };
 
@@ -1411,41 +1383,58 @@ void VR::ParseConfigFile()
 
 void VR::WaitForConfigUpdate()
 {
-    char currentDir[MAX_STR_LEN];
-    GetCurrentDirectory(MAX_STR_LEN, currentDir);
-    std::string configDir = std::string(currentDir) + "\\VR\\";
-    HANDLE fileChangeHandle = FindFirstChangeNotificationA(configDir.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
+    std::filesystem::path configDir = std::filesystem::current_path() / "VR";
+    std::error_code ec;
+
+    // Create config directory if it doesn't exist
+    std::filesystem::create_directories(configDir, ec);
+
+    // Busy-wait until m_Game is ready (constructor may not have finished)
+    while (!m_Game)
+        Sleep(50);
 
     std::filesystem::file_time_type configLastModified;
+    int pollCount = 0;
+
     while (m_Game)
     {
-        try 
+        try
         {
-            auto configModifiedTime = std::filesystem::last_write_time("VR\\config.txt");
+            auto configModifiedTime = std::filesystem::last_write_time(
+                configDir / "config.txt", ec);
+            if (ec)
+            {
+                // Config not found yet — keep waiting
+                ec.clear();
+                Sleep(1000);
+                continue;
+            }
+
             if (configModifiedTime != configLastModified)
             {
                 configLastModified = configModifiedTime;
-                if (m_Game) // Re-check after potentially long file operation
+                if (m_Game)
                     ParseConfigFile();
-                
-                std::cout << "Successfully reloaded 'config.txt'\n";
+
+                VRLog::Write("Config file reloaded successfully");
             }
         }
         catch (const std::invalid_argument &e)
         {
-            concatErrorMsg(
-                *m_Game, "Failed to parse 'config.txt' (", e.what(), ")");
+            VRLog::Write(std::string("Config parse error: ") + e.what());
         }
         catch (const std::filesystem::filesystem_error &e)
         {
-            concatErrorMsg(
-                *m_Game, "'config.txt' not found. (", e.what(), ")");
-            
-            return;
+            VRLog::Write(std::string("Config not found: ") + e.what());
+            Sleep(2000);
+            continue;
         }
-        
-        FindNextChangeNotification(fileChangeHandle);
-        WaitForSingleObject(fileChangeHandle, INFINITE);
-        Sleep(100); // Sometimes the thread tries to read config.txt before it's finished writing
+
+        // Poll every 1 second instead of using broken Win32 notifications
+        Sleep(1000);
+
+        // Log every 30 seconds that the config watcher is alive
+        if (++pollCount % 30 == 0)
+            VRLog::Write("Config watcher alive");
     }
 }

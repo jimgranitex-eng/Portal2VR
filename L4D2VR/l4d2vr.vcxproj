@@ -120,7 +120,7 @@
       <ModuleDefinitionFile>$(SolutionDir)dxvk\src\d3d9\d3d9.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin\$(TargetName)$(TargetExt)" &amp; copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\$(TargetName)$(TargetExt)"</Command>
+      <Command>if exist "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin\$(TargetName)$(TargetExt)" & copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -148,7 +148,7 @@
       <AdditionalDependencies>openvr_api.lib;libMinHook.x86.lib;$(SolutionDir)dxvk\lib32\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin\$(TargetName)$(TargetExt)" &amp; copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\$(TargetName)$(TargetExt)"</Command>
+      <Command>if exist "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\bin\$(TargetName)$(TargetExt)" & copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "C:\Program Files (x86)\Steam\steamapps\common\Portal 2\$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -207,7 +207,9 @@
     <ClInclude Include="..\dxvk\src\util\log\*.h" />
     <ClInclude Include="..\dxvk\src\util\sha1\*.h" />
     <ClInclude Include="..\dxvk\src\util\sync\*.h" />
-    <ClInclude Include="..\dxvk\src\vulkan\*.h" />    <ClInclude Include="game.h" />
+    <ClInclude Include="..\dxvk\src\vulkan\*.h" />
+    <ClInclude Include="log.h" />
+    <ClInclude Include="game.h" />
     <ClInclude Include="hooks.h" />
     <ClInclude Include="offsets.h" />
     <ClInclude Include="sdk\bitbuf.h" />
@@ -242,7 +244,9 @@
     <ClCompile Include="..\dxvk\src\util\sha1\*.cpp" />
     <ClCompile Include="..\dxvk\src\util\sha1\*.c" />
     <ClCompile Include="..\dxvk\src\util\sync\*.cpp" />
-    <ClCompile Include="..\dxvk\src\vulkan\*.cpp" />    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="..\dxvk\src\vulkan\*.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="hooks.cpp" />
     <ClCompile Include="sdk\bitbuf.cpp" />

@@ -87,6 +87,7 @@ public:
     bool m_CachedArmsModel = false;
 
     Game();
+    ~Game();
 
     void *GetInterface(const char *dllname, const char *interfacename);
 

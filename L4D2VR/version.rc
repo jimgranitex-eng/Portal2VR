@@ -1,8 +1,8 @@
 #include <windows.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 5,3,0,8
-PRODUCTVERSION 5,3,0,8
+FILEVERSION 5,3,0,9
+PRODUCTVERSION 5,3,0,9
 FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 FILEFLAGS 0
 FILEOS VOS_NT_WINDOWS32
@@ -15,12 +15,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Portal 2 VR"
       VALUE "FileDescription", "Portal 2 VR - d3d9.dll wrapper for SteamVR"
-      VALUE "FileVersion", "5.3.0.8"
+      VALUE "FileVersion", "5.3.0.9"
       VALUE "InternalName", "d3d9"
       VALUE "LegalCopyright", "Copyright (C) 2026 Portal 2 VR Team"
       VALUE "OriginalFilename", "d3d9.dll"
       VALUE "ProductName", "Portal 2 VR"
-      VALUE "ProductVersion", "5.3.0.8"
+      VALUE "ProductVersion", "5.3.0.9"
     END
   END
   BLOCK "VarFileInfo"

@@ -442,11 +442,6 @@ int Hooks::dReadUsercmd(bf_read *buf, CUserCmd* move, CUserCmd* from)
 }
 
 
-int Hooks::dGetPrimaryAttackActivity(void *ecx, void *edx, void *meleeInfo)
-{
-	return hkGetPrimaryAttackActivity.fOriginal(ecx, meleeInfo);
-}
-
 Vector *Hooks::dEyePosition(void *ecx, void *edx, Vector *eyePos)
 {
 	Vector *result = hkEyePosition.fOriginal(ecx, eyePos);
